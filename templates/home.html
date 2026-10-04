@@ -1,0 +1,413 @@
+{% extends 'base.html' %}
+
+{% block title %}Girgitdon — Restoran va Kafe Biznesi uchun Zamonaviy Ekotizim{% endblock %}
+
+{% block content %}
+<!-- ==========================================
+     NAVBAR
+========================================== -->
+<nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-100 transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-3">
+            <img src="/static/logo.png" alt="Girgitdon Logo" class="w-12 h-12 rounded-full object-cover shadow-md border-2 border-orange-200">
+            <div>
+                <span class="text-2xl font-black bg-gradient-to-r from-orange-600 via-amber-600 to-slate-900 bg-clip-text text-transparent">Girgitdon</span>
+                <span class="block text-[10px] uppercase tracking-widest text-slate-400 font-bold -mt-1">POS & QR Ekosistema</span>
+            </div>
+        </a>
+
+        <!-- Desktop Menu Links -->
+        <div class="hidden md:flex items-center gap-8 text-xs font-bold text-slate-600">
+            <a href="#features" class="hover:text-orange-600 transition">Imkoniyatlar</a>
+            <a href="#howItWorks" class="hover:text-orange-600 transition">Qanday ishlaydi?</a>
+            <a href="#restaurants" class="hover:text-orange-600 transition">Restoranlar</a>
+            <a href="#modules" class="hover:text-orange-600 transition">KDS & Kassa</a>
+            <a href="#faq" class="hover:text-orange-600 transition">Ko'p so'raladigan savollar</a>
+        </div>
+
+        <div class="flex items-center gap-3">
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}" class="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs transition shadow-md shadow-orange-500/20 flex items-center gap-2">
+                    <i class="fa-solid fa-gauge-high"></i> Boshqaruv Paneli
+                </a>
+            {% else %}
+                <a href="{% url 'login' %}" class="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-700 hover:text-orange-500 transition">
+                    Kirish
+                </a>
+                <a href="{% url 'register' %}" class="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs transition shadow-md shadow-orange-500/20">
+                    Restoranni ulash
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<!-- ==========================================
+     HERO SECTION
+========================================== -->
+<header class="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28 bg-gradient-to-b from-white via-orange-50/30 to-slate-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center max-w-4xl mx-auto">
+            {% if platform_settings.announcement %}
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold tracking-wide bg-amber-100 text-amber-900 border border-amber-200 mb-6 shadow-sm animate-pulse">
+                <i class="fa-solid fa-bullhorn text-orange-600"></i> {{ platform_settings.announcement }}
+            </div>
+            {% else %}
+            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase bg-orange-100 text-orange-700 mb-6">
+                <i class="fa-solid fa-bolt text-orange-500"></i> {{ platform_settings.tagline }}
+            </span>
+            {% endif %}
+
+            <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 tracking-tight leading-tight mb-6">
+                {{ platform_settings.hero_title }}
+            </h1>
+            <p class="text-base sm:text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl mx-auto">
+                {{ platform_settings.hero_description }}
+            </p>
+            
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="{% url 'register' %}" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-orange-500 text-white font-extrabold hover:bg-orange-600 transition text-base shadow-xl shadow-orange-500/30 flex items-center justify-center gap-3 active:scale-95">
+                    <i class="fa-solid fa-store text-lg"></i> Restoranni bepul ulash
+                </a>
+                <a href="#howItWorks" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white border border-slate-200 text-slate-800 font-extrabold hover:bg-slate-50 transition text-base flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-play text-orange-500"></i> Qanday ishlaydi?
+                </a>
+            </div>
+
+            <!-- Real-time Jonli Platforma Metriklari -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16 pt-10 border-t border-slate-200/60 max-w-4xl mx-auto text-left">
+                <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-utensils"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-black text-slate-900">{{ total_restaurants }} ta</h4>
+                        <p class="text-[11px] font-bold text-slate-400">Faol Restoranlar</p>
+                    </div>
+                </div>
+
+                <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-bell-concierge"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-black text-slate-900">{{ total_orders }} ta</h4>
+                        <p class="text-[11px] font-bold text-slate-400">Jami Buyurtmalar</p>
+                    </div>
+                </div>
+
+                <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-burger"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-black text-slate-900">{{ total_dishes }} xil</h4>
+                        <p class="text-[11px] font-bold text-slate-400">Menyudagi Taomlar</p>
+                    </div>
+                </div>
+
+                <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-black text-slate-900">{{ total_visitors }} ta</h4>
+                        <p class="text-[11px] font-bold text-slate-400">Mehmon Tashriflari</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ==========================================
+     AFZALLIKLAR & IMKONIYATLAR (FEATURES)
+========================================== -->
+<section id="features" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <span class="text-xs font-black uppercase tracking-widest text-orange-500 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100">
+                To'liq Avtomatizatsiya
+            </span>
+            <h2 class="text-3xl sm:text-4xl font-black text-slate-900 mt-4">
+                Nima uchun Girgitdon tizimini tanlashadi?
+            </h2>
+            <p class="text-slate-500 text-sm sm:text-base mt-3">
+                Qog'oz menyulardan voz keching va har bir stolni daromad keltiruvchi interaktiv nuqtaga aylantiring.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Feature 1 -->
+            <div class="p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:border-orange-200 hover:shadow-xl transition duration-300">
+                <div class="w-14 h-14 rounded-2xl bg-orange-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-orange-500/30 mb-6">
+                    <i class="fa-solid fa-qrcode"></i>
+                </div>
+                <h3 class="text-lg font-black text-slate-900 mb-2">QR Menyu & Mobil Ilova Sezgirligi</h3>
+                <p class="text-slate-600 text-xs leading-relaxed">
+                    Mijoz hech qanday ilova yuklab olmasdan o'z kamerasini QR-kodga qaratib, go'zal mobil menyu ochiladi va buyurtma bera oladi.
+                </p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:border-orange-200 hover:shadow-xl transition duration-300">
+                <div class="w-14 h-14 rounded-2xl bg-blue-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-blue-500/30 mb-6">
+                    <i class="fa-solid fa-fire-burner"></i>
+                </div>
+                <h3 class="text-lg font-black text-slate-900 mb-2">Oshxona Ekrani (KDS) & Jonli Taymer</h3>
+                <p class="text-slate-600 text-xs leading-relaxed">
+                    Stoldan buyurtma tushishi bilan oshpaz monitorida real-vaqtda audio signal bilan paydo bo'ladi. Tayyorlanish vaqti avtomatik hisoblanadi.
+                </p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:border-orange-200 hover:shadow-xl transition duration-300">
+                <div class="w-14 h-14 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-emerald-500/30 mb-6">
+                    <i class="fa-solid fa-cash-register"></i>
+                </div>
+                <h3 class="text-lg font-black text-slate-900 mb-2">Kassa & POS To'lovlar Nazorati</h3>
+                <p class="text-slate-600 text-xs leading-relaxed">
+                    Taom stolga yetkazilgach to'lov uchun avtomatik kassaga tushadi. Naqd, Plastik karta yoki Payme/Click orqali to'lov yopiladi.
+                </p>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:border-orange-200 hover:shadow-xl transition duration-300">
+                <div class="w-14 h-14 rounded-2xl bg-purple-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-purple-500/30 mb-6">
+                    <i class="fa-solid fa-language"></i>
+                </div>
+                <h3 class="text-lg font-black text-slate-900 mb-2">4 Tilli Interfeys (UZ, ЎЗ, RU, EN)</h3>
+                <p class="text-slate-600 text-xs leading-relaxed">
+                    Chet ellik sayyohlar va mehmonlar o'z ona tillarida interfeysdan foydalana oladilar.
+                </p>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:border-orange-200 hover:shadow-xl transition duration-300">
+                <div class="w-14 h-14 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-amber-500/30 mb-6">
+                    <i class="fa-solid fa-users-viewfinder"></i>
+                </div>
+                <h3 class="text-lg font-black text-slate-900 mb-2">Mehmonlar & Qurilmalar Monitoringi</h3>
+                <p class="text-slate-600 text-xs leading-relaxed">
+                    Menyuga kirgan har bir smartfon (iPhone, Samsung, Xiaomi) va tashrifchilar hisoboti alohida boshqaruv panelida ko'rinadi.
+                </p>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:border-orange-200 hover:shadow-xl transition duration-300">
+                <div class="w-14 h-14 rounded-2xl bg-rose-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-rose-500/30 mb-6">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <h3 class="text-lg font-black text-slate-900 mb-2">Stol Sessiyalari & Moliyaviy Analitika</h3>
+                <p class="text-slate-600 text-xs leading-relaxed">
+                    Kunlik, haftalik tushumlar, qaysi stolda qancha summa sarflangani va bekor qilingan buyurtmalar sabablari tahlili.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ==========================================
+     QANDAY ISHLAYDI? (HOW IT WORKS STEP-BY-STEP)
+========================================== -->
+<section id="howItWorks" class="py-20 bg-slate-900 text-white relative overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <span class="text-xs font-black uppercase tracking-widest text-orange-400 bg-orange-500/10 px-3 py-1.5 rounded-full border border-orange-500/20">
+                Oddiy 4 Ta Qadam
+            </span>
+            <h2 class="text-3xl sm:text-4xl font-black mt-4 text-white">
+                Tizim Restoranda Qanday Ishlaydi?
+            </h2>
+            <p class="text-slate-400 text-sm mt-3">
+                Mijozning stolga o'tirganidan boshlab hisob-kitobgacha bo'lgan to'liq zanjir.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-slate-800/80 p-6 rounded-3xl border border-slate-700/80 space-y-3">
+                <div class="w-10 h-10 rounded-xl bg-orange-500 font-black text-white flex items-center justify-center text-sm shadow-md shadow-orange-500/30">
+                    1
+                </div>
+                <h4 class="text-base font-bold text-white">QR Kodni Skanerlash</h4>
+                <p class="text-xs text-slate-400">Mijoz stoldagi QR kodni skaner qiladi va darhol restoranning boy menyusi ochiladi.</p>
+            </div>
+
+            <div class="bg-slate-800/80 p-6 rounded-3xl border border-slate-700/80 space-y-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-500 font-black text-white flex items-center justify-center text-sm shadow-md shadow-blue-500/30">
+                    2
+                </div>
+                <h4 class="text-base font-bold text-white">Savat & Buyurtma</h4>
+                <p class="text-xs text-slate-400">Taomlar savatga qo'shiladi va "Oshxonaga yuborish" tugmasi bir bosishda jo'natiladi.</p>
+            </div>
+
+            <div class="bg-slate-800/80 p-6 rounded-3xl border border-slate-700/80 space-y-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500 font-black text-white flex items-center justify-center text-sm shadow-md shadow-amber-500/30">
+                    3
+                </div>
+                <h4 class="text-base font-bold text-white">Oshxona & Tayyorlash</h4>
+                <p class="text-xs text-slate-400">Oshpazlar buyurtmani qabul qilib tayyorlaydi. Mijoz ekranida teskari taymer ketadi.</p>
+            </div>
+
+            <div class="bg-slate-800/80 p-6 rounded-3xl border border-slate-700/80 space-y-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500 font-black text-white flex items-center justify-center text-sm shadow-md shadow-emerald-500/30">
+                    4
+                </div>
+                <h4 class="text-base font-bold text-white">Kassa & To'lov</h4>
+                <p class="text-xs text-slate-400">Yetkazilgan taomlar avtomatik kassaga tushadi va to'lov qabul qilinib buyurtma yopiladi.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ==========================================
+     RESTORANLAR KATALOGI
+========================================== -->
+<section id="restaurants" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
+        <div>
+            <span class="text-xs font-black uppercase tracking-widest text-orange-500 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100">
+                Jonli Restoranlar
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 mt-2">Platformaga Ulangan Restoranlar</h2>
+            <p class="text-slate-500 text-xs sm:text-sm mt-1">Platformamizdan faol foydalanayotgan muassasalarning jonli menyusini sinab ko'ring</p>
+        </div>
+        <a href="{% url 'register' %}" class="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 transition flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i> O'z restoraningizni qo'shing
+        </a>
+    </div>
+
+    {% if restaurants %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for r in restaurants %}
+        <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-100/50 hover:shadow-2xl hover:scale-[1.01] transition duration-300 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-500 font-black text-2xl border border-orange-100 overflow-hidden shadow-sm flex-shrink-0">
+                        {% if r.logo %}
+                            <img src="{{ r.logo.url }}" class="w-full h-full object-cover" />
+                        {% else %}
+                            {{ r.name|slice:":1" }}
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-slate-900">{{ r.name }}</h3>
+                        <p class="text-xs text-slate-400 mt-0.5"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i> {{ r.address|default:"Manzil belgilanmagan" }}</p>
+                    </div>
+                </div>
+                <p class="text-slate-600 text-xs line-clamp-2 mb-4 leading-relaxed">{{ r.description|default:"Mazali taomlar, qulay muhit va a'lo darajadagi xizmat." }}</p>
+            </div>
+            
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-xs font-bold px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mr-1 animate-pulse"></span> Ochiq
+                </span>
+                <a href="{% url 'public_menu' r.slug %}" target="_blank" class="px-4 py-2 rounded-xl bg-orange-50 hover:bg-orange-500 hover:text-white text-orange-600 font-black text-xs transition flex items-center gap-1.5">
+                    Menyuni ko'rish <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-3xl p-12 text-center border border-slate-100">
+        <div class="w-16 h-16 bg-orange-100 text-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
+            <i class="fa-solid fa-utensils"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-2">Hali restoranlar qo'shilmadi</h3>
+        <p class="text-slate-500 text-sm mb-6">Birinchi bo'lib o'z restoraningiz yoki kafengizni tizimga ulang!</p>
+        <a href="{% url 'register' %}" class="inline-block px-6 py-3 bg-orange-500 text-white rounded-xl font-bold shadow-md shadow-orange-500/30">
+            Hozir boshlash
+        </a>
+    </div>
+    {% endif %}
+</section>
+
+<!-- ==========================================
+     KO'P SO'RALADIGAN SAVOLLAR (FAQ)
+========================================== -->
+<section id="faq" class="py-20 bg-slate-50 border-t border-slate-200/60">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <span class="text-xs font-black uppercase tracking-widest text-orange-500 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100">
+                Savol-Javob
+            </span>
+            <h2 class="text-3xl font-black text-slate-900 mt-3">Ko'p So'raladigan Savollar</h2>
+        </div>
+
+        <div class="space-y-4">
+            <details class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer group">
+                <summary class="font-bold text-slate-800 text-sm flex items-center justify-between">
+                    <span>Mijoz menyudan foydalanishi uchun dastur o'rnatishi kerakmi?</span>
+                    <i class="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform text-xs"></i>
+                </summary>
+                <p class="text-xs text-slate-600 mt-3 leading-relaxed border-t border-slate-100 pt-3">
+                    Yo'q! Mijoz hech qanday dastur yuklab olmaydi. Oddiy telefon kamerasi orqali stoldagi QR kodni skaner qilishi kifoya, menyu bir zumda veb-interfeys shaklida ochiladi.
+                </p>
+            </details>
+
+            <details class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer group">
+                <summary class="font-bold text-slate-800 text-sm flex items-center justify-between">
+                    <span>Oshxona ekrani va Kassa qanday qilib bir-biri bilan bog'lanadi?</span>
+                    <i class="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform text-xs"></i>
+                </summary>
+                <p class="text-xs text-slate-600 mt-3 leading-relaxed border-t border-slate-100 pt-3">
+                    Barcha jarayon real-vaqtda markaziy server orqali ishlaydi. Oshpaz taomni "Yetkazildi" qilishi bilan hisob-kitob avtomatik tarzda Kassa monitorida paydo bo'ladi.
+                </p>
+            </details>
+
+            <details class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer group">
+                <summary class="font-bold text-slate-800 text-sm flex items-center justify-between">
+                    <span>Stollarning QR kodlarini qanday chop etamiz?</span>
+                    <i class="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform text-xs"></i>
+                </summary>
+                <p class="text-xs text-slate-600 mt-3 leading-relaxed border-t border-slate-100 pt-3">
+                    Restoran administrator panelidagi "Stollar & QR Kodlar" bo'limidan barcha stollarni yoki bitta alohida stol QR kodini to'g'ridan-to'g'ri chop etish (printer/PDF) mumkin.
+                </p>
+            </details>
+
+            <details class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer group">
+                <summary class="font-bold text-slate-800 text-sm flex items-center justify-between">
+                    <span>Restoranni tizimga ulash qancha vaqt oladi?</span>
+                    <i class="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform text-xs"></i>
+                </summary>
+                <p class="text-xs text-slate-600 mt-3 leading-relaxed border-t border-slate-100 pt-3">
+                    Atigi 2 daqiqa! Ro'yxatdan o'tasiz, menyudagi taomlar va stol sonini kiritasiz va tayyor QR kodlarni chop qilib stollarga joylaysiz.
+                </p>
+            </details>
+        </div>
+    </div>
+</section>
+
+<!-- ==========================================
+     CALL TO ACTION (CTA)
+========================================== -->
+<section class="py-16 bg-gradient-to-tr from-orange-600 to-amber-500 text-white text-center">
+    <div class="max-w-4xl mx-auto px-4">
+        <h2 class="text-3xl sm:text-4xl font-black mb-4">Restoraningizni Raqamli Asrga Olib Chiqing!</h2>
+        <p class="text-white/90 text-sm sm:text-base mb-8 max-w-xl mx-auto">
+            Girgitdon platformasi bilan xizmat ko'rsatish tezligini oshiring, xatoliklarni kamaytiring va mijozlar oqimini ko'paytiring.
+        </p>
+        <a href="{% url 'register' %}" class="px-8 py-4 rounded-2xl bg-white text-slate-900 font-black text-sm hover:bg-slate-100 transition shadow-2xl inline-flex items-center gap-2 active:scale-95">
+            <i class="fa-solid fa-store text-orange-500"></i> Hozir bepul boshlang
+        </a>
+    </div>
+</section>
+
+<!-- ==========================================
+     FOOTER
+========================================== -->
+<footer class="mt-auto border-t border-slate-200 bg-white py-10 text-slate-500 text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <img src="/static/logo.png" class="w-8 h-8 rounded-full">
+            <span class="font-black text-slate-800 text-sm">Girgitdon Platform</span>
+        </div>
+        <p>© 2026 Girgitdon. Restoran va kafelar uchun to'liq avtomatlashtirilgan QR Menyu, KDS va Kassa platformasi.</p>
+        <div class="flex items-center gap-4 text-slate-400">
+            <a href="{% url 'login' %}" class="hover:text-slate-700">Kirish</a>
+            <a href="{% url 'register' %}" class="hover:text-slate-700">Ro'yxatdan o'tish</a>
+        </div>
+    </div>
+</footer>
+{% endblock %}

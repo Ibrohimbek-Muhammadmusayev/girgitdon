@@ -1,0 +1,242 @@
+{% extends 'dashboard/index.html' %}
+
+{% block title %}Taomlar va Menyu Boshqaruvi — {{ restaurant.name }}{% endblock %}
+{% block header_title %}Menyu & Taomlar Boshqaruvi{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-6">
+
+    <!-- Tugmalar paneli: Taom qo'shish va Toifa qo'shish -->
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-black text-slate-900">Restoran Menyusi</h2>
+            <p class="text-xs text-slate-500">Mijozlar telefonida ko'rinadigan taomlar va toifalar</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="document.getElementById('categoryModal').classList.remove('hidden')" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white font-bold text-xs text-slate-700 hover:bg-slate-50 transition flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-folder-plus text-orange-500"></i> Yangi Toifa
+            </button>
+            <button onclick="document.getElementById('itemModal').classList.remove('hidden')" class="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 font-bold text-xs text-white transition flex items-center gap-2 shadow-lg shadow-orange-500/20">
+                <i class="fa-solid fa-plus"></i> Yangi Taom Qo'shish
+            </button>
+        </div>
+    </div>
+
+    <!-- Kategoriyalar ro'yxati -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-2">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2">Toifalar:</span>
+        {% for cat in categories %}
+        <span class="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-2 shadow-sm">
+            <i class="fa-solid fa-{{ cat.icon }} text-orange-500"></i> {{ cat.name }} ({{ cat.items.count }})
+        </span>
+        {% empty %}
+        <span class="text-xs text-slate-400">Toifalar mavjud emas.</span>
+        {% endfor %}
+    </div>
+
+    <!-- Taomlar Ro'yxati Kartochkalari (Grid) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for item in items %}
+        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition group">
+            <div>
+                <!-- Rasm -->
+                <div class="h-44 bg-slate-100 relative overflow-hidden">
+                    {% if item.image %}
+                        <img src="{{ item.image.url }}" alt="{{ item.name }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                    {% else %}
+                        <div class="w-full h-full flex flex-col items-center justify-center text-slate-300 bg-slate-50">
+                            <i class="fa-solid fa-bowl-food text-4xl mb-1"></i>
+                            <span class="text-xs">Rasm yo'q</span>
+                        </div>
+                    {% endif %}
+
+                    <!-- Holati tugmasi (Mavjud / Tugagan) -->
+                    <span class="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-sm {% if item.is_available %}bg-emerald-500 text-white{% else %}bg-rose-500 text-white{% endif %}">
+                        {% if item.is_available %}Mavjud{% else %}Tugagan{% endif %}
+                    </span>
+                    <span class="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md text-white text-xs font-bold">
+                        {{ item.category.name }}
+                    </span>
+                </div>
+
+                <!-- Tafsilotlar -->
+                <div class="p-5">
+                    <h3 class="font-bold text-slate-900 text-lg">{{ item.name }}</h3>
+                    <p class="text-slate-500 text-xs mt-1 line-clamp-2">{{ item.description|default:"Tarkibi kiritilmagan" }}</p>
+                    <div class="mt-4 flex items-center justify-between">
+                        <span class="text-lg font-black text-orange-600">{{ item.price|floatformat:0 }} so'm</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Boshqaruv tugmalari -->
+            <div class="p-4 border-t border-slate-50 bg-slate-50/50 flex items-center justify-between">
+                <form method="POST" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="toggle_availability">
+                    <input type="hidden" name="item_id" value="{{ item.id }}">
+                    <button type="submit" class="text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 transition">
+                        {% if item.is_available %}Tugagan qilish{% else %}Mavjud qilish{% endif %}
+                    </button>
+                </form>
+
+                <div class="flex items-center gap-1">
+                    <button type="button" onclick="openEditItemModal({{ item.id }}, '{{ item.name|escapejs }}', {{ item.category.id }}, {{ item.price|floatformat:0 }}, '{{ item.description|default:''|escapejs }}')" class="text-slate-600 hover:text-orange-600 text-xs font-bold px-2.5 py-1.5 rounded-lg hover:bg-orange-50 transition flex items-center gap-1">
+                        <i class="fa-solid fa-pen-to-square"></i> Tahrirlash
+                    </button>
+
+                    <form method="POST" onsubmit="return confirm('Rostdan ham ushbu taomni o\'chirmoqchimisiz?');" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete_item">
+                        <input type="hidden" name="item_id" value="{{ item.id }}">
+                        <button type="submit" class="text-rose-500 hover:text-rose-700 text-xs font-bold p-1.5 hover:bg-rose-50 rounded-lg transition" title="O'chirish">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-16 text-center bg-white rounded-3xl border border-slate-100 p-8">
+            <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl">
+                <i class="fa-solid fa-bowl-rice"></i>
+            </div>
+            <h3 class="font-bold text-slate-800">Menyuda hali taomlar yo'q</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4">Birinchi taomingizni rasmi va narxi bilan qo'shing!</p>
+            <button onclick="document.getElementById('itemModal').classList.remove('hidden')" class="px-5 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-xs shadow-md">
+                + Yangi taom qo'shish
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- Modal: Yangi Toifa Qo'shish -->
+<div id="categoryModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl">
+        <h3 class="text-lg font-black text-slate-900 mb-4">Yangi Toifa Qo'shish</h3>
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_category">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Toifa nomi</label>
+                <input type="text" name="name" required placeholder="Masalan: Issiq taomlar, Fastfood" class="w-full p-3 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Belgi (FontAwesome)</label>
+                <select name="icon" class="w-full p-3 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none">
+                    <option value="utensils">Oshxona (utensils)</option>
+                    <option value="burger">Burger / Fastfood</option>
+                    <option value="pizza-slice">Pitsa</option>
+                    <option value="mug-hot">Kofe / Choy</option>
+                    <option value="glass-water">Ichimliklar</option>
+                    <option value="cake-candles">Shirinliklar</option>
+                    <option value="bowl-rice">Milliy taomlar</option>
+                </select>
+            </div>
+            <div class="flex items-center justify-end gap-3 pt-4">
+                <button type="button" onclick="document.getElementById('categoryModal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-xs text-slate-600">Bekor qilish</button>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-xs shadow-md">Saqlash</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Yangi Taom Qo'shish -->
+<div id="itemModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+        <h3 class="text-lg font-black text-slate-900 mb-4">Menyuga Yangi Taom Qo'shish</h3>
+        <form method="POST" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_item">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Taom nomi</label>
+                <input type="text" name="name" required placeholder="Masalan: Go'shtli Lavash, Oq osh..." class="w-full p-3 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Toifa</label>
+                    <select name="category_id" required class="w-full p-3 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none">
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Narxi (so'm)</label>
+                    <input type="number" name="price" required placeholder="45000" class="w-full p-3 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tarkibi va tavsifi</label>
+                <textarea name="description" rows="3" placeholder="Mol go'shti, pomidor, maxsus sous, bodring..." class="w-full p-3 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Taom rasmi (Foto)</label>
+                <input type="file" name="image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+            </div>
+            <div class="flex items-center justify-end gap-3 pt-4">
+                <button type="button" onclick="document.getElementById('itemModal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-xs text-slate-600">Bekor qilish</button>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-xs shadow-md">Qo'shish</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Taomni Tahrirlash (Edit Item Modal) -->
+<div id="editItemModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+        <h3 class="text-lg font-black text-slate-900 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-pen-to-square text-orange-500"></i> Taomni Tahrirlash
+        </h3>
+        <form method="POST" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit_item">
+            <input type="hidden" name="item_id" id="editItemId">
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Taom nomi</label>
+                <input type="text" name="name" id="editItemName" required class="w-full p-3 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Toifa</label>
+                    <select name="category_id" id="editItemCategory" required class="w-full p-3 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none">
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Narxi (so'm)</label>
+                    <input type="number" name="price" id="editItemPrice" required class="w-full p-3 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tarkibi va tavsifi</label>
+                <textarea name="description" id="editItemDescription" rows="3" class="w-full p-3 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Yangi rasm (ixtiyoriy almashtirish)</label>
+                <input type="file" name="image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+            </div>
+            <div class="flex items-center justify-end gap-3 pt-4">
+                <button type="button" onclick="document.getElementById('editItemModal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-xs text-slate-600">Bekor qilish</button>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md">O'zgarishlarni Saqlash</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openEditItemModal(id, name, categoryId, price, description) {
+        document.getElementById('editItemId').value = id;
+        document.getElementById('editItemName').value = name;
+        document.getElementById('editItemCategory').value = categoryId;
+        document.getElementById('editItemPrice').value = price;
+        document.getElementById('editItemDescription').value = description;
+        document.getElementById('editItemModal').classList.remove('hidden');
+    }
+</script>
+{% endblock %}

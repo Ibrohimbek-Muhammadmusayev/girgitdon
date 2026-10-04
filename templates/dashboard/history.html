@@ -1,0 +1,449 @@
+{% extends 'dashboard/index.html' %}
+
+{% block title %}Buyurtmalar Tarixi & Analitika — {{ restaurant.name }}{% endblock %}
+{% block header_title %}Buyurtmalar Tarixi & Stol Tahlili{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-6">
+
+    <!-- KPI Kartochkalar: Tanlangan davr/filter bo'yicha -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center text-2xl font-bold flex-shrink-0">
+                <i class="fa-solid fa-receipt"></i>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Jami Buyurtmalar</p>
+                <h3 class="text-2xl font-black text-slate-900 mt-0.5">{{ total_count }} <span class="text-xs font-normal text-slate-500">ta</span></h3>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl font-bold flex-shrink-0">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Bajarilgan Tushum</p>
+                <h3 class="text-2xl font-black text-emerald-600 mt-0.5">{{ total_revenue|floatformat:0 }} <span class="text-xs font-normal text-slate-500">so'm</span></h3>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-2xl font-bold flex-shrink-0">
+                <i class="fa-solid fa-ban"></i>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Bekor Qilingan</p>
+                <h3 class="text-2xl font-black text-rose-600 mt-0.5">{{ cancelled_count }} <span class="text-xs font-normal text-slate-500">ta</span></h3>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl font-bold flex-shrink-0">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Yo'qotilgan summa</p>
+                <h3 class="text-2xl font-black text-amber-600 mt-0.5">{{ cancelled_revenue|floatformat:0 }} <span class="text-xs font-normal text-slate-500">so'm</span></h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filterlash Formasi -->
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm">
+        <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5"><i class="fa-solid fa-calendar-day text-orange-500 mr-1"></i> Aniq Sana</label>
+                <input type="date" name="date" value="{{ selected_date }}" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-orange-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5"><i class="fa-solid fa-chair text-orange-500 mr-1"></i> Stol bo'yicha</label>
+                <select name="table" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-orange-500 outline-none">
+                    <option value="">Barcha stollar</option>
+                    {% for t in all_tables %}
+                    <option value="{{ t.number }}" {% if selected_table == t.number|stringformat:"i" %}selected{% endif %}>{{ t.name }} #{{ t.number }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5"><i class="fa-solid fa-list-check text-orange-500 mr-1"></i> Holati</label>
+                <select name="status" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-orange-500 outline-none">
+                    <option value="">Barcha holatlar</option>
+                    <option value="COMPLETED" {% if selected_status == 'COMPLETED' %}selected{% endif %}>Yakunlandi (Bajarilgan)</option>
+                    <option value="ACCEPTED" {% if selected_status == 'ACCEPTED' %}selected{% endif %}>Tayyorlanmoqda</option>
+                    <option value="READY" {% if selected_status == 'READY' %}selected{% endif %}>Tayyor (Yetkazilmoqda)</option>
+                    <option value="PENDING" {% if selected_status == 'PENDING' %}selected{% endif %}>Kutilmoqda</option>
+                    <option value="CANCELLED" {% if selected_status == 'CANCELLED' %}selected{% endif %}>Bekor qilingan</option>
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button type="submit" class="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-filter"></i> Filtrlash
+                </button>
+                <a href="{% url 'order_history' %}" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition" title="Filterni tozalash">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Agar stol tanlangan bo'lsa: Stol Sessiyasi va Mehmonlari Tahlili -->
+    {% if table_session_stats %}
+    <div class="bg-slate-900 rounded-3xl p-6 text-white shadow-xl space-y-4 border border-slate-800">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-orange-500 text-white flex items-center justify-center text-xl font-black">
+                    #{{ table_session_stats.table_number }}
+                </div>
+                <div>
+                    <h3 class="text-base font-black">{{ table_session_stats.table_number }}-stol Tahlili {% if selected_date %}({{ selected_date }}){% endif %}</h3>
+                    <p class="text-xs text-slate-400">Shu stolda qayd etilgan sessiya va mehmonlar</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 text-xs">
+                <div class="bg-slate-800/80 px-3.5 py-2 rounded-xl border border-slate-700">
+                    <span class="text-slate-400">Tashrif buyurganlar:</span>
+                    <strong class="text-white ml-1">{{ table_session_stats.visitors_count }} ta</strong>
+                </div>
+                <div class="bg-slate-800/80 px-3.5 py-2 rounded-xl border border-slate-700">
+                    <span class="text-slate-400">Aktiv xaridorlar:</span>
+                    <strong class="text-emerald-400 ml-1">{{ table_session_stats.active_visitors }} ta</strong>
+                </div>
+                <div class="bg-slate-800/80 px-3.5 py-2 rounded-xl border border-slate-700">
+                    <span class="text-slate-400">Jami tushum:</span>
+                    <strong class="text-orange-400 ml-1">{{ table_session_stats.total_spent|floatformat:0 }} so'm</strong>
+                </div>
+            </div>
+        </div>
+
+        {% if table_session_stats.visitors %}
+        <div>
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">Stoldagi qurilmalar / Mehmonlar:</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {% for v in table_session_stats.visitors %}
+                <div class="bg-slate-800/70 border border-slate-700/60 p-3 rounded-2xl flex items-center justify-between">
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        <div class="w-8 h-8 rounded-xl bg-slate-700 flex items-center justify-center text-xs flex-shrink-0">
+                            {% if 'iPhone' in v.device_name or 'iOS' in v.os_name %}
+                            <i class="fa-brands fa-apple text-white"></i>
+                            {% elif 'Android' in v.os_name %}
+                            <i class="fa-brands fa-android text-emerald-400"></i>
+                            {% else %}
+                            <i class="fa-solid fa-laptop text-sky-400"></i>
+                            {% endif %}
+                        </div>
+                        <div class="truncate">
+                            <p class="text-xs font-bold text-white truncate">{{ v.device_name }}</p>
+                            <p class="text-[10px] text-slate-400">{{ v.last_seen|date:"H:i, d-M" }}</p>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0 ml-2">
+                        {% if v.is_active %}
+                        <span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">Buyurtma qilgan</span>
+                        {% else %}
+                        <span class="px-2 py-0.5 rounded-md bg-slate-700 text-slate-400 text-[10px] font-bold">Faqat ko'rgan</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Buyurtmalar Ro'yxati Yilqiq Jadvali -->
+    <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div>
+                <h3 class="font-bold text-slate-900 text-sm">Buyurtmalar Ro'yxati</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Jami {{ orders|length }} ta buyurtma</p>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto w-full">
+            <table class="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                    <tr class="bg-slate-50/80 text-slate-400 uppercase tracking-wider border-b border-slate-100 text-[11px] font-bold">
+                        <th class="py-3.5 px-4">Buyurtma & Sana</th>
+                        <th class="py-3.5 px-4">Stol</th>
+                        <th class="py-3.5 px-4">Taomlar xulosasi</th>
+                        <th class="py-3.5 px-4">Jami summa</th>
+                        <th class="py-3.5 px-4">Holati</th>
+                        <th class="py-3.5 px-4 text-center">Batafsil</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-xs">
+                    {% for order in orders %}
+                    <tr class="hover:bg-slate-50/70 transition">
+                        <!-- № va Sana -->
+                        <td class="py-4 px-4 whitespace-nowrap">
+                            <span class="font-mono font-black text-slate-900 text-sm">#{{ order.id }}</span>
+                            <div class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                                <i class="fa-regular fa-clock text-[10px]"></i> {{ order.created_at|date:"d.m.Y H:i" }}
+                            </div>
+                        </td>
+
+                        <!-- Stol -->
+                        <td class="py-4 px-4 whitespace-nowrap">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 font-bold border border-orange-100">
+                                <i class="fa-solid fa-chair text-xs"></i> {{ order.table_number }}-stol
+                            </span>
+                        </td>
+
+                        <!-- Taomlar qisqa xulosasi -->
+                        <td class="py-4 px-4">
+                            <div class="text-slate-800 font-semibold text-xs">
+                                {{ order.items.first.item_name }} (x{{ order.items.first.quantity }})
+                                {% if order.items.count > 1 %}
+                                <span class="text-orange-500 font-bold ml-1">+{{ order.items.count|add:"-1" }} ta boshqa</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Jami {{ order.items.count }} xil taom</p>
+                        </td>
+
+                        <!-- Summa -->
+                        <td class="py-4 px-4 whitespace-nowrap">
+                            <span class="font-black text-slate-900 text-sm">{{ order.total_price|floatformat:0 }}</span>
+                            <span class="text-[10px] text-slate-400 font-semibold">so'm</span>
+                        </td>
+
+                        <!-- Holati -->
+                        <td class="py-4 px-4 whitespace-nowrap">
+                            {% if order.status == 'COMPLETED' %}
+                            <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 font-bold inline-flex items-center gap-1.5 text-xs">
+                                <i class="fa-solid fa-circle-check text-[11px]"></i> To'landi (Yakunlandi)
+                            </span>
+                            {% elif order.status == 'DELIVERED' %}
+                            <span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-300 font-bold inline-flex items-center gap-1.5 text-xs animate-pulse">
+                                <i class="fa-solid fa-cash-register text-[11px]"></i> Kassada kutilmoqda
+                            </span>
+                            {% elif order.status == 'ACCEPTED' %}
+                            <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-200 font-bold inline-flex items-center gap-1.5 text-xs">
+                                <i class="fa-solid fa-fire text-[11px]"></i> Tayyorlanmoqda
+                            </span>
+                            {% elif order.status == 'READY' %}
+                            <span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 font-bold inline-flex items-center gap-1.5 text-xs">
+                                <i class="fa-solid fa-bell text-[11px]"></i> Tayyor
+                            </span>
+                            {% elif order.status == 'PENDING' %}
+                            <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 font-bold inline-flex items-center gap-1.5 text-xs">
+                                <i class="fa-solid fa-clock text-[11px]"></i> Kutilmoqda
+                            </span>
+                            {% elif order.status == 'CANCELLED' %}
+                            <span class="px-3 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-200 font-bold inline-flex items-center gap-1.5 text-xs">
+                                <i class="fa-solid fa-ban text-[11px]"></i> Bekor qilindi
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Batafsil Modal Tugmasi -->
+                        <td class="py-4 px-4 text-center whitespace-nowrap">
+                            <button onclick="openOrderDetailsModal({{ order.id }})" class="px-3.5 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-500 text-orange-600 hover:text-white font-bold text-xs transition flex items-center justify-center gap-1.5 mx-auto border border-orange-200 shadow-sm active:scale-95">
+                                <i class="fa-solid fa-eye"></i>
+                                <span>Ko'rish</span>
+                            </button>
+
+                            <!-- Yashirin JSON ma'lumot shu buyurtma uchun -->
+                            <script id="order-data-{{ order.id }}" type="application/json">
+                            {
+                                "id": {{ order.id }},
+                                "table_number": {{ order.table_number }},
+                                "created_at": "{{ order.created_at|date:'d.m.Y H:i' }}",
+                                "status": "{{ order.status }}",
+                                "status_display": "{{ order.get_status_display }}",
+                                "is_paid": {{ order.is_paid|yesno:"true,false" }},
+                                "payment_method": "{{ order.get_payment_method_display|default:''|escapejs }}",
+                                "paid_at": "{{ order.paid_at|date:'d.m.Y H:i'|default:'' }}",
+                                "total_price": "{{ order.total_price|floatformat:0 }}",
+                                "notes": "{{ order.customer_notes|default:''|escapejs }}",
+                                "client_name": "{{ order.guest_visitor.client_name|default:''|escapejs }}",
+                                "client_phone": "{{ order.guest_visitor.client_phone|default:''|escapejs }}",
+                                "cancelled_by": "{{ order.get_cancelled_by_display|default:''|escapejs }}",
+                                "cancellation_reason": "{{ order.cancellation_reason|default:''|escapejs }}",
+                                "device_name": "{{ order.guest_visitor.device_name|default:'Noma\'lum qurilma'|escapejs }}",
+                                "guest_uuid": "{{ order.guest_uuid|default:''|escapejs }}",
+                                "items": [
+                                    {% for itm in order.items.all %}
+                                    {
+                                        "name": "{{ itm.item_name|escapejs }}",
+                                        "qty": {{ itm.quantity }},
+                                        "price": "{{ itm.price|floatformat:0 }}",
+                                        "total": "{{ itm.total|floatformat:0 }}"
+                                    }{% if not forloop.last %},{% endif %}
+                                    {% endfor %}
+                                ]
+                            }
+                            </script>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-14 text-center text-slate-400">
+                            <div class="w-16 h-16 rounded-full bg-slate-50 text-slate-300 flex items-center justify-center text-2xl mx-auto mb-3">
+                                <i class="fa-solid fa-receipt"></i>
+                            </div>
+                            <p class="font-bold text-sm text-slate-700">Buyurtmalar topilmadi</p>
+                            <p class="text-xs text-slate-400 mt-0.5">Filter parametrlarini o'zgartirib ko'ring.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Buyurtma To'liq Tafsilotlari Modali -->
+<div id="orderDetailsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <!-- Modal Sarlavhasi -->
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-orange-500 text-white flex items-center justify-center font-black text-sm">
+                    <span id="modalOrderTable">#1</span>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-slate-900" id="modalOrderIdTitle">Buyurtma #0</h3>
+                    <p class="text-xs text-slate-400" id="modalOrderDate">-</p>
+                </div>
+            </div>
+            <button onclick="closeOrderDetailsModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Buyurtma Holati & Mehmon Qurilmasi -->
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 space-y-2 text-xs">
+            <div class="flex justify-between items-center py-1 border-b border-slate-200/60">
+                <span class="text-slate-500 font-bold">Holati:</span>
+                <span id="modalOrderStatusBadge" class="font-bold">-</span>
+            </div>
+            <div class="flex justify-between items-center py-1 border-b border-slate-200/60">
+                <span class="text-slate-500 font-bold">Mehmon Qurilmasi:</span>
+                <strong id="modalOrderDevice" class="text-slate-900 font-bold">-</strong>
+            </div>
+            <div class="flex justify-between items-center py-1">
+                <span class="text-slate-500 font-bold">Mehmon ID (UUID):</span>
+                <span id="modalOrderGuestUuid" class="font-mono text-[11px] text-slate-700">-</span>
+            </div>
+        </div>
+
+        <!-- Agar bekor qilingan bo'lsa -->
+        <div id="modalCancelInfoBlock" class="p-3 bg-rose-50 rounded-2xl border border-rose-100 text-rose-800 text-xs hidden space-y-1">
+            <p><strong><i class="fa-solid fa-ban mr-1"></i> Kim bekor qildi:</strong> <span id="modalCancelledBy">-</span></p>
+            <p><strong>Sabab:</strong> <span id="modalCancellationReason">-</span></p>
+        </div>
+
+        <!-- Taomlar Ro'yxati -->
+        <div>
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Buyurtma qilingan taomlar:</h4>
+            <div id="modalOrderItemsList" class="space-y-2">
+                <!-- JS Dinamik to'ldiradi -->
+            </div>
+        </div>
+
+        <!-- Mijoz Izohi -->
+        <div id="modalCustomerNotesBlock" class="hidden">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mijoz Izohi:</h4>
+            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/80 text-amber-900 text-xs font-medium" id="modalCustomerNotes">
+                -
+            </div>
+        </div>
+
+        <!-- Jami hisob -->
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase">Jami To'lov Summasi:</span>
+            <div class="text-right">
+                <span id="modalOrderTotalSum" class="text-xl font-black text-slate-900">0</span>
+                <span class="text-xs text-slate-500">so'm</span>
+            </div>
+        </div>
+
+        <div class="pt-2">
+            <button onclick="closeOrderDetailsModal()" class="w-full py-3 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition">
+                Yopish
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openOrderDetailsModal(orderId) {
+        const raw = document.getElementById(`order-data-${orderId}`).textContent;
+        const data = JSON.parse(raw);
+
+        document.getElementById('modalOrderTable').innerText = `#${data.table_number}`;
+        document.getElementById('modalOrderIdTitle').innerText = `Buyurtma #${data.id} (${data.table_number}-stol)`;
+        document.getElementById('modalOrderDate').innerText = data.created_at;
+        document.getElementById('modalOrderDevice').innerText = data.device_name;
+        document.getElementById('modalOrderGuestUuid').innerText = data.guest_uuid ? data.guest_uuid.substring(0, 16) + '...' : "Mavjud emas";
+        document.getElementById('modalOrderTotalSum').innerText = data.total_price;
+
+        // Holat badge
+        const badge = document.getElementById('modalOrderStatusBadge');
+        if (data.status === 'COMPLETED') {
+            const payMethod = data.payment_method ? ` (${data.payment_method})` : '';
+            badge.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">To'landi${payMethod}</span>`;
+        } else if (data.status === 'DELIVERED') {
+            badge.innerHTML = '<span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-300 animate-pulse">Kassada kutilmoqda</span>';
+        } else if (data.status === 'ACCEPTED') {
+            badge.innerHTML = '<span class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">Tayyorlanmoqda</span>';
+        } else if (data.status === 'READY') {
+            badge.innerHTML = '<span class="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200">Tayyor</span>';
+        } else if (data.status === 'CANCELLED') {
+            badge.innerHTML = '<span class="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200">Bekor qilindi</span>';
+        } else {
+            badge.innerHTML = '<span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">Kutilmoqda</span>';
+        }
+
+        // Bekor qilinganlik ma'lumoti
+        const cancelBlock = document.getElementById('modalCancelInfoBlock');
+        if (data.status === 'CANCELLED') {
+            cancelBlock.classList.remove('hidden');
+            document.getElementById('modalCancelledBy').innerText = data.cancelled_by || 'Oshxona';
+            document.getElementById('modalCancellationReason').innerText = data.cancellation_reason || "Sabab ko'rsatilmagan";
+        } else {
+            cancelBlock.classList.add('hidden');
+        }
+
+        // Mijoz izohi
+        const notesBlock = document.getElementById('modalCustomerNotesBlock');
+        if (data.notes) {
+            notesBlock.classList.remove('hidden');
+            document.getElementById('modalCustomerNotes').innerText = data.notes;
+        } else {
+            notesBlock.classList.add('hidden');
+        }
+
+        // Taomlar ro'yxati
+        const list = document.getElementById('modalOrderItemsList');
+        let html = '';
+        data.items.forEach(itm => {
+            html += `
+                <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
+                    <div>
+                        <h5 class="font-bold text-slate-800">${itm.name}</h5>
+                        <span class="text-[11px] text-slate-400">${itm.price} so'mdan</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="px-2 py-0.5 rounded-md bg-orange-100 text-orange-700 font-black text-xs">x${itm.qty}</span>
+                        <div class="font-black text-slate-900 mt-0.5">${itm.total} so'm</div>
+                    </div>
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+
+        document.getElementById('orderDetailsModal').classList.remove('hidden');
+    }
+
+    function closeOrderDetailsModal() {
+        document.getElementById('orderDetailsModal').classList.add('hidden');
+    }
+</script>
+{% endblock %}

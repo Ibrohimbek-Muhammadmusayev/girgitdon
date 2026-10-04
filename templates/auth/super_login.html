@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Super Admin Kirish — Girgitdon Platformasi{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-4 bg-slate-900">
+    <div class="max-w-md w-full bg-slate-800 border border-slate-700 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-orange-500 via-amber-500 to-rose-500"></div>
+
+        <div class="text-center mb-8 pt-2">
+            <div class="w-16 h-16 rounded-full bg-slate-700/80 p-1 mx-auto mb-4 border-2 border-orange-500 shadow-lg">
+                <img src="/static/logo.png" alt="Girgitdon" class="w-full h-full object-cover rounded-full">
+            </div>
+            <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                Platforma Asoschisi & Boshqaruvchisi
+            </span>
+            <h2 class="text-2xl font-black text-white mt-3">Super Admin Kabineti</h2>
+            <p class="text-slate-400 text-xs mt-1">Barcha restoranlar va tizim ustidan to'liq nazorat</p>
+        </div>
+
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Super Admin Login</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </span>
+                    <input type="text" name="username" required placeholder="admin" class="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500 font-semibold text-sm transition">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Maxfiy Parol</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                        <i class="fa-solid fa-key"></i>
+                    </span>
+                    <input type="password" name="password" required placeholder="••••••••" class="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500 font-semibold text-sm transition">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full py-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black transition shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 text-base mt-2">
+                <i class="fa-solid fa-lock-open"></i> Tizimga Kirish
+            </button>
+        </form>
+
+        <div class="mt-8 text-center text-xs text-slate-500">
+            <a href="{% url 'home' %}" class="hover:text-orange-400 transition">
+                <i class="fa-solid fa-arrow-left mr-1"></i> Asosiy saytga qaytish
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

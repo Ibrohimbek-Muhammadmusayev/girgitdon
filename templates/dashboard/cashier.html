@@ -1,0 +1,464 @@
+{% extends 'dashboard/index.html' %}
+
+{% block title %}Kassa & To'lovlar — {{ restaurant.name }}{% endblock %}
+{% block header_title %}Kassa & To'lovlar Boshqaruvi{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-6">
+
+    <!-- KPI & Kassa Status Yuqori Blok (3 ta Asosiy Kartochka) -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <!-- 1. To'lov kutilmoqda -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl font-bold">
+                <i class="fa-solid fa-receipt"></i>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">To'lov kutilmoqda</p>
+                <h3 id="kpiPendingCount" class="text-2xl font-black text-slate-900 mt-0.5">{{ pending_count|default:"0" }} <span class="text-xs font-normal text-slate-500">ta buyurtma</span></h3>
+            </div>
+        </div>
+
+        <!-- 2. Kassadagi Jami Hisob (Kutilayotgan summa) -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center text-2xl font-bold">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Kassadagi Jami Hisob</p>
+                <h3 id="kpiPendingTotal" class="text-2xl font-black text-orange-600 mt-0.5">{{ pending_revenue|default:"0" }} <span class="text-xs font-normal text-slate-500">so'm</span></h3>
+            </div>
+        </div>
+
+        <!-- 3. Bugungi Kunlik Tushum (To'langan tushum) -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl font-bold">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Bugungi Kunlik Tushum</p>
+                <h3 id="kpiTodayRevenue" class="text-2xl font-black text-emerald-600 mt-0.5">{{ today_revenue|default:"0" }} <span class="text-xs font-normal text-slate-500">so'm</span></h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buyurtmalar Kartochkalari (Grid) -->
+    <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
+            <div>
+                <h3 class="font-black text-slate-900 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-cash-register text-emerald-500"></i> Kutilayotgan To'lovlar
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">Oshxonadan yetkazilgan, mijoz hisob-kitobini kutayotgan stollar</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- Saralash (Sort) Tanlagich -->
+                <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+                    <span class="text-slate-400 pl-2 text-[11px]"><i class="fa-solid fa-arrow-down-short-wide mr-1"></i> Tartib:</span>
+                    <button type="button" onclick="setCashierSort('newest')" id="btnCashierSortNewest" class="px-3 py-1.5 rounded-lg transition bg-emerald-500 text-white shadow-sm flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-up"></i> Yangilari tepadan
+                    </button>
+                    <button type="button" onclick="setCashierSort('oldest')" id="btnCashierSortOldest" class="px-3 py-1.5 rounded-lg transition text-slate-600 hover:bg-slate-200 flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-down"></i> Yangilari pastdan
+                    </button>
+                </div>
+
+                <!-- Ovozni tekshirish tugmasi -->
+                <button type="button" onclick="playCashierSound()" class="px-3.5 py-2 rounded-xl bg-slate-100 text-xs font-bold text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 shadow-sm border border-slate-200 active:scale-95">
+                    <i class="fa-solid fa-volume-high text-emerald-500"></i> Ovozni tekshirish
+                </button>
+
+                <span id="cashierBadgeCount" class="text-xs font-bold px-3 py-1.5 bg-amber-50 text-amber-700 rounded-xl border border-amber-200">0 ta stol</span>
+            </div>
+        </div>
+
+        <div id="cashierOrdersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Dinamik JS to'ldiradi -->
+        </div>
+    </div>
+
+</div>
+
+<!-- TO'LOV QABUL QILISH MODAL OYNASI -->
+<div id="paymentModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-scale-up">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="text-base font-black text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-wallet text-emerald-500"></i> To'lovni Qabul Qilish
+            </h3>
+            <button onclick="closePaymentModal()" class="text-slate-400 hover:text-slate-700 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2 text-xs">
+            <div class="flex justify-between items-center text-slate-500">
+                <span>Buyurtma / Stol:</span>
+                <strong id="modalOrderTitle" class="text-slate-900 font-bold text-sm">#-- (Stol --)</strong>
+            </div>
+            <div class="flex justify-between items-center text-slate-500">
+                <span>Mijoz:</span>
+                <strong id="modalClientInfo" class="text-slate-900 font-bold">Anonim mehmon</strong>
+            </div>
+            <div class="flex justify-between items-center pt-2 border-t border-slate-200/60">
+                <span class="font-bold text-slate-700 text-sm">To'lov Summasi:</span>
+                <span id="modalTotalSum" class="text-xl font-black text-emerald-600">0 so'm</span>
+            </div>
+        </div>
+
+        <!-- To'lov Usulini Tanlash -->
+        <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-2">To'lov turi</label>
+            <div class="grid grid-cols-2 gap-2.5">
+                <button type="button" onclick="selectPaymentMethod('CASH', this)" class="pay-method-btn active p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50/50 text-emerald-700 font-bold text-xs flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-money-bill-1-wave text-base"></i> Naqd Pul
+                </button>
+                <button type="button" onclick="selectPaymentMethod('CARD', this)" class="pay-method-btn p-3 rounded-2xl border-2 border-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 hover:border-slate-300 transition">
+                    <i class="fa-solid fa-credit-card text-base text-blue-500"></i> Humo / Uzcard
+                </button>
+                <button type="button" onclick="selectPaymentMethod('PAYME', this)" class="pay-method-btn p-3 rounded-2xl border-2 border-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 hover:border-slate-300 transition">
+                    <i class="fa-solid fa-qrcode text-base text-sky-500"></i> Payme / Click
+                </button>
+                <button type="button" onclick="selectPaymentMethod('OTHER', this)" class="pay-method-btn p-3 rounded-2xl border-2 border-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 hover:border-slate-300 transition">
+                    <i class="fa-solid fa-ellipsis text-base text-slate-400"></i> Boshqa
+                </button>
+            </div>
+        </div>
+
+        <!-- Tugmalar -->
+        <div class="pt-2 flex items-center gap-3">
+            <button onclick="closePaymentModal()" class="flex-1 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                Bekor qilish
+            </button>
+            <button onclick="confirmPayment()" id="btnConfirmPay" class="flex-1 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs shadow-lg shadow-emerald-500/30 active:scale-95 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-check-double"></i> To'landi & Yopish
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let activePaymentOrderId = null;
+    let selectedMethod = 'CASH';
+    let cashierPollInterval = null;
+    let knownCashierOrderIds = new Set();
+    let cashierSortOrder = localStorage.getItem('girgitdon_cashier_sort') || 'newest'; // 'newest' yoki 'oldest'
+    let isFirstCashierLoad = true;
+    let audioCtx = null;
+
+    function setCashierSort(order) {
+        cashierSortOrder = order;
+        localStorage.setItem('girgitdon_cashier_sort', order);
+        updateCashierSortButtons();
+        fetchCashierOrders();
+    }
+
+    function updateCashierSortButtons() {
+        const btnNewest = document.getElementById('btnCashierSortNewest');
+        const btnOldest = document.getElementById('btnCashierSortOldest');
+        if (!btnNewest || !btnOldest) return;
+        if (cashierSortOrder === 'newest') {
+            btnNewest.className = "px-3 py-1.5 rounded-lg transition bg-emerald-500 text-white shadow-sm flex items-center gap-1";
+            btnOldest.className = "px-3 py-1.5 rounded-lg transition text-slate-600 hover:bg-slate-200 flex items-center gap-1";
+        } else {
+            btnOldest.className = "px-3 py-1.5 rounded-lg transition bg-emerald-500 text-white shadow-sm flex items-center gap-1";
+            btnNewest.className = "px-3 py-1.5 rounded-lg transition text-slate-600 hover:bg-slate-200 flex items-center gap-1";
+        }
+    }
+
+    function getAudioContext() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        return audioCtx;
+    }
+
+    // Har qanday klik yoki tugma bosilganda audio konteksni faollashtirish (Browser Autoplay Policy fix)
+    function unlockAudio() {
+        const ctx = getAudioContext();
+        if (ctx && ctx.state === 'suspended') {
+            ctx.resume();
+        }
+    }
+    document.addEventListener('click', unlockAudio, { once: false });
+    document.addEventListener('keydown', unlockAudio, { once: false });
+    document.addEventListener('touchstart', unlockAudio, { once: false });
+
+    // Realistik Kassa apparati (POS "Ka-Ching!" & Tangalar jiringlashi) ovozi
+    function playCashierSound() {
+        try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
+            const now = ctx.currentTime;
+
+            // 1. Kassa tortmasining ochilishi (Mechanical lever click / pop)
+            const oscNoise = ctx.createOscillator();
+            const gainNoise = ctx.createGain();
+            oscNoise.type = 'sawtooth';
+            oscNoise.frequency.setValueAtTime(140, now);
+            oscNoise.frequency.exponentialRampToValueAtTime(40, now + 0.08);
+            gainNoise.gain.setValueAtTime(0.4, now);
+            gainNoise.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+            oscNoise.connect(gainNoise);
+            gainNoise.connect(ctx.destination);
+            oscNoise.start(now);
+            oscNoise.stop(now + 0.08);
+
+            // 2. Birinchi "Ka-" jiringlashi (B5 -> E6)
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'triangle';
+            osc1.frequency.setValueAtTime(1046.50, now + 0.04); // C6
+            osc1.frequency.setValueAtTime(1318.51, now + 0.10); // E6
+            gain1.gain.setValueAtTime(0.5, now + 0.04);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(now + 0.04);
+            osc1.stop(now + 0.45);
+
+            // 3. Asosiy "-Ching!" kassa metall qo'ng'irog'i (Baland va jarangdor C7)
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(2093.00, now + 0.12); // High C7
+            osc2.frequency.setValueAtTime(2637.02, now + 0.18); // High E7
+            gain2.gain.setValueAtTime(0.6, now + 0.12);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(now + 0.12);
+            osc2.stop(now + 0.9);
+
+            // 4. Tangalar shitirlashi (Metallic coin clinks)
+            [0.20, 0.26, 0.33, 0.42].forEach((delay, idx) => {
+                const coin = ctx.createOscillator();
+                const coinGain = ctx.createGain();
+                coin.type = 'triangle';
+                coin.frequency.setValueAtTime(3000 + (idx * 500), now + delay);
+                coinGain.gain.setValueAtTime(0.25, now + delay);
+                coinGain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.18);
+                coin.connect(coinGain);
+                coinGain.connect(ctx.destination);
+                coin.start(now + delay);
+                coin.stop(now + delay + 0.18);
+            });
+        } catch(e) {
+            console.log("Audio play error:", e);
+        }
+    }
+
+    function selectPaymentMethod(method, btn) {
+        selectedMethod = method;
+        document.querySelectorAll('.pay-method-btn').forEach(b => {
+            b.classList.remove('border-emerald-500', 'bg-emerald-50/50', 'text-emerald-700');
+            b.classList.add('border-slate-200', 'text-slate-700');
+        });
+        btn.classList.remove('border-slate-200', 'text-slate-700');
+        btn.classList.add('border-emerald-500', 'bg-emerald-50/50', 'text-emerald-700');
+    }
+
+    function openPaymentModal(orderId, tableNumber, totalSum, clientName, clientPhone) {
+        activePaymentOrderId = orderId;
+        document.getElementById('modalOrderTitle').innerText = `#${orderId} Buyurtma (${tableNumber}-stol)`;
+        document.getElementById('modalTotalSum').innerText = totalSum.toLocaleString() + " so'm";
+        
+        let clientStr = clientName ? clientName : "Anonim mehmon";
+        if (clientPhone) clientStr += ` (${clientPhone})`;
+        document.getElementById('modalClientInfo').innerText = clientStr;
+
+        // Reset usul:
+        selectPaymentMethod('CASH', document.querySelectorAll('.pay-method-btn')[0]);
+
+        document.getElementById('paymentModal').classList.remove('hidden');
+    }
+
+    function closePaymentModal() {
+        activePaymentOrderId = null;
+        document.getElementById('paymentModal').classList.add('hidden');
+    }
+
+    function confirmPayment() {
+        if (!activePaymentOrderId) return;
+        const btn = document.getElementById('btnConfirmPay');
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Bajarilmoqda...`;
+
+        fetch(`/api/cashier/orders/${activePaymentOrderId}/pay/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payment_method: selectedMethod })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-check-double"></i> To'landi & Yopish`;
+            if (data.status === 'ok') {
+                closePaymentModal();
+                fetchCashierOrders();
+            } else {
+                alert("Xatolik: " + data.message);
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-check-double"></i> To'landi & Yopish`;
+            alert("Tarmoq xatosi!");
+        });
+    }
+
+    function fetchCashierOrders() {
+        fetch("{% url 'api_cashier_orders' %}")
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById('cashierOrdersGrid');
+                let orders = data.orders || [];
+
+                // Yangi to'lov buyurtmasi tushganda KASSA OVOZINI chiqarish
+                let hasNewDeliveries = false;
+                orders.forEach(o => {
+                    if (!knownCashierOrderIds.has(o.id)) {
+                        hasNewDeliveries = true;
+                    }
+                    knownCashierOrderIds.add(o.id);
+                });
+
+                if (hasNewDeliveries && !isFirstCashierLoad) {
+                    playCashierSound();
+                }
+                isFirstCashierLoad = false;
+
+                // 3 ta Asosiy KPI Kartochkalarini yangilash (Xavfsiz null-check bilan)
+                const elPendingCount = document.getElementById('kpiPendingCount');
+                const elPendingTotal = document.getElementById('kpiPendingTotal');
+                const elTodayRev = document.getElementById('kpiTodayRevenue');
+                const elBadgeCount = document.getElementById('cashierBadgeCount');
+
+                if (elPendingCount) elPendingCount.innerHTML = `${data.pending_count || 0} <span class="text-xs font-normal text-slate-500">ta buyurtma</span>`;
+                if (elPendingTotal) elPendingTotal.innerHTML = `${(data.pending_revenue || 0).toLocaleString()} <span class="text-xs font-normal text-slate-500">so'm</span>`;
+                if (elTodayRev) elTodayRev.innerHTML = `${(data.today_revenue || 0).toLocaleString()} <span class="text-xs font-normal text-slate-500">so'm</span>`;
+                if (elBadgeCount) elBadgeCount.innerText = `${orders.length} ta stol`;
+
+                if (!container) return;
+
+                if (orders.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-span-full py-16 text-center text-slate-400">
+                            <div class="w-16 h-16 rounded-2xl bg-slate-50 text-slate-300 flex items-center justify-center text-3xl mx-auto mb-3">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <h4 class="font-bold text-slate-700 text-sm">Hozirda to'lov kutilayotgan buyurtmalar yo'q</h4>
+                            <p class="text-xs text-slate-400 mt-1">Oshxonadan yetkazilgan taomlar to'lov uchun avtomatik bu yerga tushadi.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Tanlangan tartib bo'yicha saralash: 'newest' (Yangi tepada - ID kamayish) yoki 'oldest' (Yangi pastda - ID o'sish)
+                if (cashierSortOrder === 'newest') {
+                    orders.sort((a, b) => b.id - a.id);
+                } else {
+                    orders.sort((a, b) => a.id - b.id);
+                }
+
+                window.currentCashierOrders = orders;
+
+                function escapeHtml(str) {
+                    if (!str) return '';
+                    return String(str)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
+                }
+
+                let html = '';
+                orders.forEach((o, index) => {
+                    const clientName = o.client_name || "Anonim mehmon";
+                    const clientInfo = o.client_phone ? `${clientName} (${o.client_phone})` : clientName;
+                    
+                    let itemsHtml = o.items.map(it => `
+                        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-0 text-xs">
+                            <span class="font-semibold text-slate-800">${escapeHtml(it.name)}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-slate-400 text-[11px]">x${it.quantity}</span>
+                                <strong class="text-slate-900">${it.total.toLocaleString()} so'm</strong>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    html += `
+                        <div class="bg-white rounded-3xl border-2 border-emerald-500/30 shadow-md p-5 flex flex-col justify-between hover:shadow-lg transition">
+                            <div>
+                                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex flex-col items-center justify-center font-black shadow-md shadow-emerald-500/20">
+                                            <span class="text-[9px] uppercase leading-none opacity-80">Stol</span>
+                                            <span class="text-lg leading-none">${o.table_number}</span>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-black text-slate-900 text-sm">#${o.id} Buyurtma</h4>
+                                            <p class="text-[11px] text-slate-400">${o.created_at} • Yetkazilgan: ${o.delivered_at || '-'}</p>
+                                        </div>
+                                    </div>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200">
+                                        <i class="fa-solid fa-hand-holding-dollar mr-1"></i> Hisob
+                                    </span>
+                                </div>
+
+                                <div class="py-2.5">
+                                    <div class="text-[11px] font-bold text-slate-500 mb-1 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-user-tag text-orange-500"></i> Mijoz: <span class="text-slate-800">${escapeHtml(clientInfo)}</span>
+                                    </div>
+                                    ${o.customer_notes ? `
+                                        <div class="p-2 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-800 font-medium mb-2">
+                                            <strong>Izoh:</strong> ${escapeHtml(o.customer_notes)}
+                                        </div>
+                                    ` : ''}
+                                    <div class="mt-2 space-y-1">
+                                        ${itemsHtml}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-100 mt-2">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-xs font-bold text-slate-400 uppercase">Jami to'lov:</span>
+                                    <span class="text-lg font-black text-emerald-600">${o.total_price.toLocaleString()} so'm</span>
+                                </div>
+
+                                <button onclick="openPaymentModalByIndex(${index})" class="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs shadow-lg shadow-emerald-500/20 active:scale-95 transition flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-cash-register"></i> To'lovni Qabul Qilish
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            })
+            .catch(e => console.error("Cashier fetch err:", e));
+    }
+
+    function openPaymentModalByIndex(index) {
+        if (!window.currentCashierOrders || !window.currentCashierOrders[index]) return;
+        const o = window.currentCashierOrders[index];
+        openPaymentModal(o.id, o.table_number, o.total_price, o.client_name, o.client_phone);
+    }
+
+    // Sahifa yuklanganda darhol ishga tushirish (Oshxona kabi bevosita va DOMContentLoaded da)
+    updateCashierSortButtons();
+    fetchCashierOrders();
+    if (!cashierPollInterval) {
+        cashierPollInterval = setInterval(fetchCashierOrders, 2500);
+    }
+</script>
+{% endblock %}

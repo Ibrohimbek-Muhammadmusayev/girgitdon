@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Restoranni Ro'yxatdan O'tkazish — SmartMenu{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-lg w-full bg-white rounded-3xl p-8 sm:p-10 border border-slate-100 shadow-2xl shadow-slate-200/50">
+        <div class="text-center mb-8">
+            <div class="w-14 h-14 bg-gradient-to-tr from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center text-white mx-auto shadow-lg shadow-orange-500/30 mb-4">
+                <i class="fa-solid fa-store text-2xl"></i>
+            </div>
+            <h2 class="text-2xl font-black text-slate-900">Restoranni ulash</h2>
+            <p class="text-slate-500 text-sm mt-1">Bir necha soniyada shaxsiy QR menyu va kabinetingizga ega bo'ling</p>
+        </div>
+
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Restoran / Kafe nomi</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                        <i class="fa-solid fa-utensils"></i>
+                    </span>
+                    <input type="text" name="restaurant_name" required placeholder="Masalan: Rayhon Milliy Taomlar" class="w-full pl-11 pr-4 py-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium text-sm transition">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Admin Login</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text" name="username" required placeholder="rayhon_admin" class="w-full pl-11 pr-4 py-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium text-sm transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Parol</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+                        <input type="password" name="password" required placeholder="••••••••" class="w-full pl-11 pr-4 py-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium text-sm transition">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Telefon raqam</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                            <i class="fa-solid fa-phone"></i>
+                        </span>
+                        <input type="text" name="phone" placeholder="+998 90 123 45 67" class="w-full pl-11 pr-4 py-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium text-sm transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Manzil / Shahar</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                            <i class="fa-solid fa-location-dot"></i>
+                        </span>
+                        <input type="text" name="address" placeholder="Toshkent sh, Chilonzor" class="w-full pl-11 pr-4 py-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium text-sm transition">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full mt-4 py-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 text-base">
+                <i class="fa-solid fa-circle-check"></i> Ro'yxatdan o'tish
+            </button>
+        </form>
+
+        <div class="mt-8 text-center text-sm text-slate-500">
+            Akkountingiz bormi? 
+            <a href="{% url 'login' %}" class="text-orange-500 font-bold hover:underline">Kirish</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

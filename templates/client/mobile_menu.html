@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ restaurant.name }} — Girgitdon Menyu</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#f97316',
+                        primaryDark: '#ea580c',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900 pb-20 select-none">
+
+    <!-- Mobil App Konteyneri (Max 480px, xuddi Telegram WebApp yoki Mobile App) -->
+    <div class="max-w-md mx-auto min-h-screen bg-slate-50 relative shadow-2xl flex flex-col justify-between overflow-x-hidden">
+
+        <!-- ==========================================
+             1. SAHIFA: MENYU (ASOSIY TAOMLAR)
+             ========================================== -->
+        <div id="pageMenu" class="page-view flex-1">
+            <!-- Header / Banner qismi -->
+            <div class="relative h-44 bg-slate-900 overflow-hidden">
+                {% if restaurant.cover_image %}
+                    <img src="{{ restaurant.cover_image.url }}" class="w-full h-full object-cover opacity-60">
+                {% else %}
+                    <div class="w-full h-full bg-gradient-to-tr from-orange-600 to-amber-500 opacity-90"></div>
+                {% endif %}
+
+                <!-- Girgitdon brend belgisi, Til tanlagich va Stol raqami -->
+                <div class="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
+                    <div class="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-white border border-white/20">
+                        <img src="/static/logo.png" alt="Girgitdon" class="w-4 h-4 rounded-full object-cover">
+                        <span class="text-[10px] font-black text-amber-400">Girgitdon</span>
+                    </div>
+
+                    <!-- Til Tanlagich (UZ, ЎЗ, RU, EN) -->
+                    <div class="flex items-center bg-black/60 backdrop-blur-md p-0.5 rounded-full border border-white/20 text-[10px] font-bold text-white">
+                        <button onclick="setMenuLanguage('uz')" data-menu-lang="uz" class="menu-lang-btn px-2 py-0.5 rounded-full bg-orange-500 text-white transition">UZ</button>
+                        <button onclick="setMenuLanguage('oz')" data-menu-lang="oz" class="menu-lang-btn px-2 py-0.5 rounded-full text-white/70 hover:text-white transition">ЎЗ</button>
+                        <button onclick="setMenuLanguage('ru')" data-menu-lang="ru" class="menu-lang-btn px-2 py-0.5 rounded-full text-white/70 hover:text-white transition">RU</button>
+                        <button onclick="setMenuLanguage('en')" data-menu-lang="en" class="menu-lang-btn px-2 py-0.5 rounded-full text-white/70 hover:text-white transition">EN</button>
+                    </div>
+
+                    <div class="bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-white text-[11px] font-black border border-white/20">
+                        <i class="fa-solid fa-chair text-orange-400 mr-1"></i> {{ table_number }}<span data-i18n="table">-stol</span>
+                    </div>
+                </div>
+
+                <!-- Restoran info -->
+                <div class="absolute bottom-4 left-4 right-4 flex items-end gap-3">
+                    <div class="w-14 h-14 rounded-2xl bg-white p-1 shadow-lg border border-slate-100 flex-shrink-0">
+                        {% if restaurant.logo %}
+                            <img src="{{ restaurant.logo.url }}" class="w-full h-full object-cover rounded-xl">
+                        {% else %}
+                            <div class="w-full h-full bg-orange-500 text-white rounded-xl flex items-center justify-center font-black text-xl">
+                                {{ restaurant.name|slice:":1" }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="text-white drop-shadow-md">
+                        <h1 class="text-xl font-black leading-tight">{{ restaurant.name }}</h1>
+                        <p class="text-xs opacity-90">{{ restaurant.address|default:"Eng sara taomlar va shinam muhit" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Qidiruv qatori -->
+            <div class="p-4 pb-2">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" oninput="searchDishes()" placeholder="Taom yoki ichimlik qidirish..." data-i18n-placeholder="search_placeholder" class="w-full pl-11 pr-4 py-3 rounded-2xl bg-white border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none shadow-sm">
+                </div>
+            </div>
+
+            <!-- Kategoriyalar Tabs (Horizontal Scroll) -->
+            <div class="px-4 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar sticky top-0 bg-slate-50/90 backdrop-blur-md z-20">
+                <button onclick="filterCategory('all', this)" class="cat-pill active px-4 py-2 rounded-xl text-xs font-black transition bg-orange-500 text-white shadow-md shadow-orange-500/20 whitespace-nowrap" data-i18n="all">
+                    Hammasi
+                </button>
+                {% for cat in categories %}
+                <button onclick="filterCategory('cat-{{ cat.id }}', this)" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 whitespace-nowrap flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-{{ cat.icon }} text-orange-500"></i> {{ cat.name }}
+                </button>
+                {% endfor %}
+            </div>
+
+            <!-- Taomlar Ro'yxati -->
+            <div id="dishesList" class="p-4 space-y-3 pb-28">
+                {% for cat in categories %}
+                    {% for item in cat.items.all %}
+                    <div class="dish-card cat-{{ cat.id }} bg-white rounded-2xl p-3 border border-slate-100 shadow-sm flex gap-3 hover:shadow-md transition relative" data-name="{{ item.name|lower }}">
+                        <div class="w-24 h-24 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 relative">
+                            {% if item.image %}
+                                <img src="{{ item.image.url }}" alt="{{ item.name }}" class="w-full h-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full flex items-center justify-center text-slate-300">
+                                    <i class="fa-solid fa-utensils text-2xl"></i>
+                                </div>
+                            {% endif %}
+                            {% if not item.is_available %}
+                            <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center text-white text-[10px] font-black uppercase" data-i18n="sold_out">
+                                Tugagan
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex-1 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-sm leading-snug">{{ item.name }}</h3>
+                                <p class="text-[11px] text-slate-400 line-clamp-2 mt-0.5">{{ item.description|default:"" }}</p>
+                            </div>
+
+                            <div class="flex items-center justify-between mt-2">
+                                <span class="font-black text-sm text-slate-900">{{ item.price|floatformat:0 }} <span class="text-[10px] font-medium text-slate-500" data-i18n="som">so'm</span></span>
+
+                                {% if item.is_available %}
+                                <button onclick="addToCart({{ item.id }}, '{{ item.name|escapejs }}', {{ item.price }})" class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white transition flex items-center justify-center font-black active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-plus text-xs"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% empty %}
+                    <div class="text-center py-12 text-slate-400">
+                        <p class="text-sm font-semibold">Menyu hali to'ldirilmagan</p>
+                    </div>
+                {% endfor %}
+
+                <!-- Sahifa pastidagi So'nggi Buyurtmalar Tarixi Bloki -->
+                <div class="mt-8 pt-6 border-t border-slate-200/80">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-clock-rotate-left text-orange-500"></i> <span data-i18n="table_orders_history">Shu stoldagi Buyurtmalaringiz</span>
+                        </h3>
+                        <span id="historyOrdersCountBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">0 ta</span>
+                    </div>
+
+                    <div id="bottomMenuHistoryList" class="space-y-2.5">
+                        <div class="p-4 bg-white rounded-2xl border border-slate-100 text-center text-xs text-slate-400" data-i18n="no_orders_yet">
+                            Hozircha buyurtma qilmadingiz.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             SUZUVCHI TEZKOR BUYURTMA BARI (FLOATING BOTTOM ORDER BAR)
+             ========================================== -->
+        <div id="floatingBottomCartBar" class="fixed bottom-16 inset-x-0 max-w-md mx-auto px-4 z-40 transform translate-y-32 transition-all duration-300 pointer-events-none">
+            <div class="bg-slate-900 text-white p-3.5 rounded-2xl shadow-2xl flex items-center justify-between border border-slate-700/80 pointer-events-auto backdrop-blur-md bg-slate-900/95">
+                <div onclick="switchTab('pageCart', document.querySelectorAll('.nav-tab')[1])" class="flex items-center gap-3 cursor-pointer">
+                    <div class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center font-black text-sm relative shadow-md shadow-orange-500/30">
+                        <i class="fa-solid fa-basket-shopping text-white text-base"></i>
+                        <span id="floatingCartCount" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-slate-900">0</span>
+                    </div>
+                    <div>
+                        <p class="text-[11px] text-slate-400 uppercase tracking-wider font-bold" data-i18n="selected_dishes">Tanlangan taomlar</p>
+                        <h4 id="floatingCartTotal" class="text-sm font-black text-white">0 so'm</h4>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="switchTab('pageCart', document.querySelectorAll('.nav-tab')[1])" class="px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs shadow-lg shadow-orange-500/30 transition flex items-center gap-1.5 active:scale-95">
+                        <span data-i18n="order_btn">Buyurtma</span>
+                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             2. SAHIFA: SAVAT (TO'LIQ SAHIFA REJIMIDA)
+             ========================================== -->
+        <div id="pageCart" class="page-view flex-1 hidden p-4 pb-28">
+            <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm mb-4">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <h2 class="text-lg font-black text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-basket-shopping text-orange-500"></i> <span data-i18n="your_cart">Savatingiz</span>
+                    </h2>
+                    <span class="text-xs font-bold px-3 py-1 bg-orange-50 text-orange-600 rounded-full">{{ table_number }}<span data-i18n="table">-stol</span></span>
+                </div>
+
+                <!-- Savatdagi Taomlar Ro'yxati (Ixcham va chiroyli) -->
+                <div id="fullCartItemsList" class="py-3 space-y-2.5">
+                    <!-- Dinamik JS to'ldiradi -->
+                </div>
+
+                <!-- Izoh kiritish -->
+                <div class="pt-3 border-t border-slate-100">
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1" data-i18n="kitchen_notes_label">Oshxonaga qo'shimcha izoh</label>
+                    <input type="text" id="fullCartNotes" placeholder="Masalan: achchiq bo'lmasin, piyozsiz..." data-i18n-placeholder="kitchen_notes_placeholder" class="w-full p-3 rounded-xl border border-slate-200 text-xs font-medium outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+
+                <!-- Jami summa va Buyurtma tugmasi -->
+                <div class="mt-5 pt-4 border-t border-slate-100">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold text-slate-400 uppercase" data-i18n="total">Jami hisob:</span>
+                        <span id="fullCartTotalSum" class="text-xl font-black text-slate-900">0 so'm</span>
+                    </div>
+                    <button onclick="sendOrderFromCart()" id="btnSendFullOrder" class="w-full py-3.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black text-sm shadow-xl shadow-orange-500/30 active:scale-95 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i> <span data-i18n="order_now">Oshxonaga buyurtma yuborish</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Savat sahifasidagi Buyurtmalar Tarixini Ko'rish Bloki / Tugmasi -->
+            <div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm">
+                <button onclick="toggleCartHistoryList()" class="w-full flex items-center justify-between font-bold text-xs text-slate-800">
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-orange-500 text-sm"></i>
+                        <span data-i18n="table_orders_history">Shu stoldagi Buyurtmalaringiz</span>
+                    </span>
+                    <span class="flex items-center gap-1 text-slate-400">
+                        <span id="cartHistoryBadge" class="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full font-bold">0 ta</span>
+                        <i id="cartHistoryChevron" class="fa-solid fa-chevron-down text-[10px] transition-transform"></i>
+                    </span>
+                </button>
+                <div id="cartHistoryContainer" class="hidden mt-3 pt-3 border-t border-slate-100 space-y-2">
+                    <div id="cartHistoryItemsList" class="space-y-2">
+                        <!-- JS Dinamik Tarixni chiqaradi -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             3. SAHIFA: RESTORAN HAQIDA VA IJTIMOIY TARMOQLAR
+             ========================================== -->
+        <div id="pageAbout" class="page-view flex-1 hidden pb-28 space-y-4">
+            <!-- 2-alohida Banner (Restoranning Tashqi ko'rinishi) -->
+            <div class="relative h-44 bg-slate-900 overflow-hidden">
+                {% if restaurant.about_cover %}
+                    <img src="{{ restaurant.about_cover.url }}" class="w-full h-full object-cover">
+                {% elif restaurant.cover_image %}
+                    <img src="{{ restaurant.cover_image.url }}" class="w-full h-full object-cover opacity-80">
+                {% else %}
+                    <div class="w-full h-full bg-gradient-to-tr from-orange-600 to-amber-500"></div>
+                {% endif %}
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/30"></div>
+                <div class="absolute bottom-3 left-4 right-4 text-white">
+                    <span class="text-[10px] uppercase tracking-wider font-extrabold bg-orange-500/80 px-2 py-0.5 rounded-md">Restoran Tashqi Ko'rinishi</span>
+                </div>
+            </div>
+
+            <div class="px-4 space-y-4 -mt-8 relative z-10">
+                <!-- Profil & Logo Kartochkasi -->
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-lg text-center">
+                    <div class="w-20 h-20 rounded-2xl mx-auto -mt-14 mb-3 overflow-hidden border-4 border-white p-1 bg-white shadow-md flex items-center justify-center">
+                        {% if restaurant.logo %}
+                            <img src="{{ restaurant.logo.url }}" class="w-full h-full object-cover rounded-xl">
+                        {% else %}
+                            <div class="w-full h-full bg-orange-500 text-white rounded-xl flex items-center justify-center font-black text-2xl">
+                                {{ restaurant.name|slice:":1" }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h2 class="text-xl font-black text-slate-900">{{ restaurant.name }}</h2>
+                    <p class="text-xs text-slate-500 mt-1 max-w-xs mx-auto">{{ restaurant.description|default:"Mazali taomlar, maroqli hordiq va yuqori darajadagi servis." }}</p>
+                    <div class="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> <span data-i18n="now_open">Hozir ochiq</span>
+                    </div>
+                </div>
+
+                <!-- Ijtimoiy Tarmoqlar va Havolalar Tugmalari -->
+                <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2" data-i18n="contact_social">Bog'lanish & Ijtimoiy Tarmoqlar</h3>
+
+                    {% if restaurant.instagram %}
+                    <a href="{% if 'http' in restaurant.instagram %}{{ restaurant.instagram }}{% else %}https://instagram.com/{{ restaurant.instagram|cut:'@' }}{% endif %}" target="_blank" class="w-full p-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white font-bold text-xs flex items-center justify-between shadow-md shadow-pink-500/20 active:scale-98 transition">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-brands fa-instagram text-lg"></i> <span data-i18n="our_instagram">Bizning Instagram sahifa</span>
+                        </span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs opacity-80"></i>
+                    </a>
+                    {% endif %}
+
+                    {% if restaurant.telegram %}
+                    <a href="{% if 'http' in restaurant.telegram %}{{ restaurant.telegram }}{% else %}https://t.me/{{ restaurant.telegram|cut:'@' }}{% endif %}" target="_blank" class="w-full p-3.5 rounded-2xl bg-sky-500 text-white font-bold text-xs flex items-center justify-between shadow-md shadow-sky-500/20 active:scale-98 transition">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-brands fa-telegram text-lg"></i> <span data-i18n="telegram_channel">Telegram kanal / guruh</span>
+                        </span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs opacity-80"></i>
+                    </a>
+                    {% endif %}
+
+                    {% if restaurant.phone %}
+                    <a href="tel:{{ restaurant.phone }}" class="w-full p-3.5 rounded-2xl bg-emerald-500 text-white font-bold text-xs flex items-center justify-between shadow-md shadow-emerald-500/20 active:scale-98 transition">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-phone text-base"></i> <span data-i18n="call_us">Qo'ng'iroq qilish:</span> {{ restaurant.phone }}
+                        </span>
+                        <i class="fa-solid fa-phone-flip text-xs opacity-80"></i>
+                    </a>
+                    {% endif %}
+
+                    <!-- Wi-Fi -->
+                    {% if restaurant.wifi_name %}
+                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2 text-slate-700">
+                            <i class="fa-solid fa-wifi text-orange-500"></i>
+                            <span><span data-i18n="wifi">Wi-Fi:</span> <strong>{{ restaurant.wifi_name }}</strong></span>
+                        </div>
+                        <span class="font-mono bg-white px-2 py-1 rounded-lg border border-slate-200 text-slate-900 font-bold">{{ restaurant.wifi_pass }}</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Manzil -->
+                    {% if restaurant.address %}
+                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-3 text-xs text-slate-600">
+                        <i class="fa-solid fa-location-dot text-rose-500 text-base"></i>
+                        <span>{{ restaurant.address }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Girgitdon Haqida Kichik Blok -->
+                <div class="text-center pt-2">
+                    <div class="inline-flex items-center gap-2 opacity-70">
+                        <img src="/static/logo.png" class="w-6 h-6 rounded-full">
+                        <span class="text-xs font-black text-slate-600">Girgitdon Electron Menu</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             4. SAHIFA: MIJOZ PROFILI (RO'YXATDAN O'TGAN BO'LSA CHIROYLI KABINET)
+             ========================================== -->
+        <div id="pageProfile" class="page-view flex-1 hidden p-4 pb-28">
+            <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                <!-- 1-Holat: Ro'yxatdan o'tmagan bo'lsa (Ro'yxatdan o'tish formasi) -->
+                <div id="guestProfileView">
+                    <div class="w-16 h-16 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center text-2xl mx-auto mb-3">
+                        <i class="fa-solid fa-user-ninja"></i>
+                    </div>
+                    <h3 class="text-lg font-black text-slate-900 text-center" data-i18n="guest_profile">Mehmon Profil</h3>
+                    <p class="text-xs text-slate-500 text-center mt-1 mb-6" data-i18n="profile_optional_desc">
+                        Ro'yxatdan o'tish <strong>ixtiyoriy</strong>! Siz ro'yxatdan o'tmasdan ham stoldan bemalol buyurtma bera olasiz.
+                    </p>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1" data-i18n="your_name">Ismingiz (ixtiyoriy)</label>
+                            <input type="text" id="clientNameInput" placeholder="Masalan: Sardor" data-i18n-placeholder="name_placeholder" class="w-full p-3.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1" data-i18n="your_phone">Telefon raqamingiz (ixtiyoriy)</label>
+                            <input type="text" id="clientPhoneInput" placeholder="+998 90 123 45 67" class="w-full p-3.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        <button onclick="saveClientProfile()" class="w-full py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md transition" data-i18n="save_btn">
+                            Ma'lumotlarimni saqlash
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2-Holat: Ro'yxatdan o'tgan bo'lsa (Shakllangan To'liq Profil Maydoni) -->
+                <div id="savedProfileView" class="hidden space-y-4">
+                    <div class="p-5 bg-gradient-to-tr from-slate-900 to-slate-800 rounded-2xl text-white shadow-md flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-orange-500 text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-orange-500/30">
+                            <span id="displayClientAvatar">M</span>
+                        </div>
+                        <div class="overflow-hidden flex-1">
+                            <div class="flex items-center gap-2">
+                                <h3 id="displayClientName" class="text-base font-black truncate">Mehmon</h3>
+                                <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">Aktiv</span>
+                            </div>
+                            <p id="displayClientPhone" class="text-xs text-slate-400 font-mono mt-0.5">+998 ...</p>
+                            <p class="text-[10px] text-orange-400 mt-1 font-semibold" data-i18n="saved_desc">Ma'lumotlaringiz buyurtmalarda avtomatik ko'rinadi</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-2">
+                        <button onclick="editClientProfile()" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1.5" data-i18n="edit_btn">
+                            <i class="fa-solid fa-pen-to-square"></i> Tahrirlash
+                        </button>
+                        <button onclick="logoutClientProfile()" class="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs transition" title="Profilni tozalash">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profil sahifasidagi Buyurtmalar Tarixi -->
+            <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm mt-4">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+                    <span><i class="fa-solid fa-clock-rotate-left mr-1"></i> <span data-i18n="recent_orders">So'nggi buyurtmangiz</span></span>
+                </h4>
+                <div id="profileRecentOrder" class="text-xs text-slate-500 py-1" data-i18n="no_orders_yet">
+                    Hozircha buyurtma qilinmagan.
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             JONLI TESKARI SANOQ EKRANI (BUYURTMA BERILGANDA)
+             ========================================== -->
+        <div id="liveOrderScreen" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-50 flex flex-col justify-between p-6 max-w-md mx-auto hidden text-white">
+            <div class="text-center pt-8">
+                <span class="px-3.5 py-1 rounded-full text-xs font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                    <i class="fa-solid fa-chair mr-1"></i> {{ table_number }}<span data-i18n="table">-stol</span>
+                </span>
+                <h2 id="liveStatusTitle" class="text-2xl font-black mt-3 mb-1" data-i18n="order_sent_title">Buyurtmangiz yuborildi!</h2>
+                <p id="liveStatusDesc" class="text-xs text-slate-400" data-i18n="order_sent_desc">Oshxona buyurtmangizni qabul qilishini kuting...</p>
+            </div>
+
+            <div class="flex flex-col items-center justify-center my-auto">
+                <div class="relative w-52 h-52 flex items-center justify-center">
+                    <div id="timerRing" class="absolute inset-0 rounded-full border-4 border-orange-500/30 animate-pulse"></div>
+                    <div class="text-center z-10">
+                        <span id="countdownMinutes" class="text-5xl font-black tracking-tight">--:--</span>
+                        <p id="countdownLabel" class="text-xs uppercase tracking-wider text-slate-400 mt-1 font-bold" data-i18n="est_time">Kutilayotgan vaqt</p>
+                    </div>
+                </div>
+
+                <div id="orderStatusBadge" class="mt-6 px-4 py-1.5 rounded-full bg-slate-800 text-xs font-bold text-slate-300" data-i18n="waiting_kitchen">
+                    Kutilmoqda...
+                </div>
+            </div>
+
+            <div class="pb-6">
+                <button onclick="closeLiveScreen()" class="w-full py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition" data-i18n="back_to_menu">
+                    Menyuga qaytish
+                </button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             BOTTOM NAVIGATION BAR (MOBIL ILOVA MENYUSI)
+             ========================================== -->
+        <div class="fixed bottom-0 inset-x-0 max-w-md mx-auto bg-white/95 backdrop-blur-lg border-t border-slate-200 z-40 px-3 py-2 flex items-center justify-around shadow-2xl">
+            <!-- Menyu tab -->
+            <button onclick="switchTab('pageMenu', this)" class="nav-tab active flex flex-col items-center gap-1 text-orange-600 transition flex-1 py-1">
+                <i class="fa-solid fa-burger text-lg"></i>
+                <span class="text-[10px] font-black" data-i18n="menu">Menyu</span>
+            </button>
+
+            <!-- Savat tab (Badge bilan) -->
+            <button onclick="switchTab('pageCart', this)" class="nav-tab relative flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition flex-1 py-1">
+                <div class="relative">
+                    <i class="fa-solid fa-basket-shopping text-lg"></i>
+                    <span id="bottomCartBadge" class="hidden absolute -top-1.5 -right-2 bg-orange-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">0</span>
+                </div>
+                <span class="text-[10px] font-bold" data-i18n="cart">Savat</span>
+            </button>
+
+            <!-- Restoran / Ma'lumot tab -->
+            <button onclick="switchTab('pageAbout', this)" class="nav-tab flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition flex-1 py-1">
+                <i class="fa-solid fa-circle-info text-lg"></i>
+                <span class="text-[10px] font-bold" data-i18n="about">Ma'lumot</span>
+            </button>
+
+            <!-- Profil tab -->
+            <button onclick="switchTab('pageProfile', this)" class="nav-tab flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition flex-1 py-1">
+                <i class="fa-solid fa-user text-lg"></i>
+                <span class="text-[10px] font-bold" data-i18n="profile">Profil</span>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- JS Skriptlar: Tablar, Savat, Jonli Sanoq va Profil -->
+    <script>
+        let cart = {}; // { itemId: { name, price, qty } }
+        let currentOrderId = null;
+        let countdownInterval = null;
+        let pollInterval = null;
+        const currentTableNumber = parseInt("{{ table_number }}") || 1;
+        const restaurantSlug = "{{ restaurant.slug }}";
+
+        // 1. MEHMON (GUEST UUID) & QURILMA ANIQLASH
+        function getOrCreateGuestUuid() {
+            let uuid = localStorage.getItem('girgitdon_guest_uuid');
+            if (!uuid) {
+                if (window.crypto && crypto.randomUUID) {
+                    uuid = crypto.randomUUID();
+                } else {
+                    uuid = 'guest_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
+                }
+                localStorage.setItem('girgitdon_guest_uuid', uuid);
+            }
+            return uuid;
+        }
+
+        function detectDeviceInfo() {
+            const ua = navigator.userAgent;
+            let device = "Noma'lum Telefon/Kompyuter";
+            let os = "Noma'lum OS";
+            let browser = "Noma'lum Brauzer";
+
+            // OS aniqlash
+            if (/iPhone/i.test(ua)) {
+                device = "Apple iPhone";
+                os = "iOS";
+            } else if (/iPad/i.test(ua)) {
+                device = "Apple iPad";
+                os = "iPadOS";
+            } else if (/Android/i.test(ua)) {
+                os = "Android";
+                if (/Samsung/i.test(ua) || /SM-/i.test(ua)) device = "Samsung Galaxy";
+                else if (/Redmi/i.test(ua) || /Xiaomi/i.test(ua) || /Mi /i.test(ua)) device = "Xiaomi / Redmi";
+                else if (/Huawei/i.test(ua) || /HONOR/i.test(ua)) device = "Huawei / Honor";
+                else if (/Pixel/i.test(ua)) device = "Google Pixel";
+                else device = "Android Qurilma";
+            } else if (/Windows NT/i.test(ua)) {
+                device = "Windows Kompyuter";
+                os = "Windows";
+            } else if (/Macintosh/i.test(ua)) {
+                device = "Apple Mac";
+                os = "macOS";
+            }
+
+            // Brauzer aniqlash
+            if (/Telegram/i.test(ua)) browser = "Telegram WebApp";
+            else if (/Chrome/i.test(ua) && !/Edge|OPR/i.test(ua)) browser = "Chrome";
+            else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = "Safari";
+            else if (/Firefox/i.test(ua)) browser = "Firefox";
+            else if (/Edge/i.test(ua)) browser = "Edge";
+
+            return { device, os, browser };
+        }
+
+        // Tizimga kirganda serverga avtomatik track so'rovi yuborish
+        function trackGuestSession() {
+            const guestUuid = getOrCreateGuestUuid();
+            const info = detectDeviceInfo();
+            const savedName = localStorage.getItem('girgitdon_client_name') || '';
+            const savedPhone = localStorage.getItem('girgitdon_client_phone') || '';
+
+            fetch(`/r/${restaurantSlug}/track/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    guest_uuid: guestUuid,
+                    table_number: currentTableNumber,
+                    device_name: info.device,
+                    os_name: info.os,
+                    browser_name: info.browser,
+                    client_name: savedName,
+                    client_phone: savedPhone
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    if (data.client_name && !savedName) {
+                        localStorage.setItem('girgitdon_client_name', data.client_name);
+                    }
+                    if (data.client_phone && !savedPhone) {
+                        localStorage.setItem('girgitdon_client_phone', data.client_phone);
+                    }
+                    displayProfileInfo();
+                    if (data.orders) {
+                        renderBottomHistory(data.orders);
+                    }
+                }
+            })
+            .catch(err => console.log("Visitor tracking error:", err));
+        }
+
+        // Savat sahifasidagi buyurtmalar tarixi akkordeonini ochish/yopish
+        function toggleCartHistoryList() {
+            const container = document.getElementById('cartHistoryContainer');
+            const chevron = document.getElementById('cartHistoryChevron');
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                if (chevron) chevron.classList.add('rotate-180');
+            } else {
+                container.classList.add('hidden');
+                if (chevron) chevron.classList.remove('rotate-180');
+            }
+        }
+
+        // Sahifa pastidagi va Savat ichidagi buyurtmalar tarixini render qilish
+        function renderBottomHistory(orders) {
+            const container = document.getElementById('bottomMenuHistoryList');
+            const badge = document.getElementById('historyOrdersCountBadge');
+            const cartHistoryBadge = document.getElementById('cartHistoryBadge');
+            const cartHistoryList = document.getElementById('cartHistoryItemsList');
+            if (!container) return;
+
+            if (!orders || orders.length === 0) {
+                if (badge) badge.innerText = "0 ta";
+                if (cartHistoryBadge) cartHistoryBadge.innerText = "0 ta";
+                const emptyHtml = `
+                    <div class="p-4 bg-white rounded-2xl border border-slate-100 text-center text-xs text-slate-400">
+                        Hozircha buyurtma qilmadingiz.
+                    </div>
+                `;
+                container.innerHTML = emptyHtml;
+                if (cartHistoryList) cartHistoryList.innerHTML = emptyHtml;
+                return;
+            }
+
+            const countStr = `${orders.length} ta`;
+            if (badge) badge.innerText = countStr;
+            if (cartHistoryBadge) cartHistoryBadge.innerText = countStr;
+
+            let html = '';
+            orders.forEach(o => {
+                let statusBadge = '';
+                if (o.status === 'COMPLETED') {
+                    statusBadge = '<span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 text-[10px] font-bold">Yetkazildi</span>';
+                } else if (o.status === 'ACCEPTED') {
+                    statusBadge = '<span class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold">Tayyorlanmoqda</span>';
+                } else if (o.status === 'READY') {
+                    statusBadge = '<span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-600 text-[10px] font-bold">Tayyor</span>';
+                } else if (o.status === 'CANCELLED') {
+                    statusBadge = '<span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-600 text-[10px] font-bold">Bekor qilindi</span>';
+                } else {
+                    statusBadge = '<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">Kutilmoqda</span>';
+                }
+
+                const itemsText = o.items.map(i => `${i.name} (x${i.quantity})`).join(', ');
+
+                html += `
+                    <div onclick="openExistingOrderTracker(${o.id})" class="p-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer hover:border-orange-200 transition">
+                        <div class="space-y-0.5 flex-1 pr-2">
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-slate-900 text-xs">#${o.id} Buyurtma</span>
+                                ${statusBadge}
+                            </div>
+                            <p class="text-[11px] text-slate-500 line-clamp-1">${itemsText}</p>
+                            <p class="text-[10px] text-slate-400">${o.created_at}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-black text-slate-900 text-xs">${o.total_price.toLocaleString()} so'm</span>
+                            <div class="text-[10px] text-orange-500 font-bold mt-0.5">Kuzatish <i class="fa-solid fa-angle-right text-[8px]"></i></div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+            if (cartHistoryList) cartHistoryList.innerHTML = html;
+        }
+
+        function openExistingOrderTracker(orderId) {
+            currentOrderId = orderId;
+            openLiveScreen();
+            startOrderTracking();
+        }
+
+        // Tablar almashinuvi
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.page-view').forEach(p => p.classList.add('hidden'));
+            const targetPage = document.getElementById(tabId);
+            if (targetPage) targetPage.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-tab').forEach(t => {
+                t.classList.remove('text-orange-600');
+                t.classList.add('text-slate-400');
+                t.querySelector('span').classList.remove('font-black');
+                t.querySelector('span').classList.add('font-bold');
+            });
+
+            if (btn) {
+                btn.classList.remove('text-slate-400');
+                btn.classList.add('text-orange-600');
+                btn.querySelector('span').classList.remove('font-bold');
+                btn.querySelector('span').classList.add('font-black');
+            }
+
+            if (tabId === 'pageCart') {
+                renderFullCart();
+            }
+        }
+
+        function addToCart(id, name, price) {
+            if (cart[id]) {
+                cart[id].qty += 1;
+            } else {
+                cart[id] = { name: name, price: price, qty: 1 };
+            }
+            updateCartBadges();
+        }
+
+        function changeQty(id, delta) {
+            if (cart[id]) {
+                cart[id].qty += delta;
+                if (cart[id].qty <= 0) {
+                    delete cart[id];
+                }
+            }
+            updateCartBadges();
+            renderFullCart();
+        }
+
+        // Suzuvchi pastki buyurtma bari va barcha badgelarni yangilash
+        function updateCartBadges() {
+            let totalQty = 0;
+            let totalSum = 0;
+
+            for (let id in cart) {
+                totalQty += cart[id].qty;
+                totalSum += cart[id].price * cart[id].qty;
+            }
+
+            const badge = document.getElementById('bottomCartBadge');
+            const floatingBar = document.getElementById('floatingBottomCartBar');
+            const floatingCount = document.getElementById('floatingCartCount');
+            const floatingTotal = document.getElementById('floatingCartTotal');
+
+            if (totalQty > 0) {
+                // Bottom tab badge
+                badge.innerText = totalQty;
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+
+                // Suzuvchi pastki bar
+                floatingCount.innerText = totalQty;
+                floatingTotal.innerText = totalSum.toLocaleString() + " so'm";
+                floatingBar.classList.remove('translate-y-32');
+                floatingBar.classList.add('translate-y-0');
+            } else {
+                badge.classList.add('hidden');
+                badge.classList.remove('flex');
+
+                floatingBar.classList.remove('translate-y-0');
+                floatingBar.classList.add('translate-y-32');
+            }
+        }
+
+        function renderFullCart() {
+            const list = document.getElementById('fullCartItemsList');
+            let html = '';
+            let totalSum = 0;
+
+            for (let id in cart) {
+                const item = cart[id];
+                totalSum += item.price * item.qty;
+                html += `
+                    <div class="flex items-center justify-between text-sm py-2.5 border-b border-slate-100 last:border-0">
+                        <div class="flex-1 pr-3">
+                            <h4 class="font-bold text-slate-800 text-sm">${item.name}</h4>
+                            <span class="text-orange-600 text-xs font-extrabold">${(item.price * item.qty).toLocaleString()} so'm</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeQty(${id}, -1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center font-black text-sm">-</button>
+                            <span class="font-bold text-sm w-5 text-center">${item.qty}</span>
+                            <button onclick="changeQty(${id}, 1)" class="w-8 h-8 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-600 flex items-center justify-center font-black text-sm">+</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (Object.keys(cart).length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-10 text-slate-400">
+                        <i class="fa-solid fa-basket-shopping text-3xl mb-2 text-slate-300"></i>
+                        <p class="text-xs font-semibold">Savatingiz hozircha bo'sh</p>
+                    </div>
+                `;
+                document.getElementById('btnSendFullOrder').disabled = true;
+                document.getElementById('btnSendFullOrder').classList.add('opacity-50');
+            } else {
+                list.innerHTML = html;
+                document.getElementById('btnSendFullOrder').disabled = false;
+                document.getElementById('btnSendFullOrder').classList.remove('opacity-50');
+            }
+
+            document.getElementById('fullCartTotalSum').innerText = totalSum.toLocaleString() + " so'm";
+        }
+
+        // Qidiruv va toifa filteri
+        function filterCategory(catClass, btn) {
+            document.querySelectorAll('.cat-pill').forEach(b => {
+                b.classList.remove('bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20');
+                b.classList.add('bg-white', 'text-slate-700');
+            });
+            btn.classList.add('bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20');
+            btn.classList.remove('bg-white', 'text-slate-700');
+
+            const dishes = document.querySelectorAll('.dish-card');
+            dishes.forEach(d => {
+                if (catClass === 'all' || d.classList.contains(catClass)) {
+                    d.style.display = 'flex';
+                } else {
+                    d.style.display = 'none';
+                }
+            });
+        }
+
+        function searchDishes() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const dishes = document.querySelectorAll('.dish-card');
+            dishes.forEach(d => {
+                const name = d.getAttribute('data-name');
+                if (name.includes(query)) {
+                    d.style.display = 'flex';
+                } else {
+                    d.style.display = 'none';
+                }
+            });
+        }
+
+        // Savat sahifasidan buyurtma yuborish
+        function sendOrderFromCart() {
+            const items = [];
+            for (let id in cart) {
+                items.push({ id: id, quantity: cart[id].qty });
+            }
+            if (items.length === 0) return;
+
+            let notes = document.getElementById('fullCartNotes').value;
+            const savedName = localStorage.getItem('girgitdon_client_name');
+            if (savedName) {
+                notes = `[Mijoz: ${savedName}] ` + notes;
+            }
+
+            const guestUuid = getOrCreateGuestUuid();
+
+            const btn = document.getElementById('btnSendFullOrder');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Oshxonaga yetkazilmoqda...`;
+
+            fetch(`/r/${restaurantSlug}/order/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    table_number: currentTableNumber,
+                    items: items,
+                    notes: notes,
+                    guest_uuid: guestUuid
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Oshxonaga buyurtma yuborish`;
+
+                if (data.status === 'ok') {
+                    currentOrderId = data.order_id;
+                    localStorage.setItem('girgitdon_last_order', JSON.stringify({
+                        id: currentOrderId,
+                        table: currentTableNumber,
+                        time: new Date().toLocaleTimeString()
+                    }));
+                    cart = {};
+                    updateCartBadges();
+                    renderFullCart();
+                    openLiveScreen();
+                    startOrderTracking();
+                    loadRecentOrderInfo();
+                    trackGuestSession(); // Yangi buyurtmani tarixga qayta yuklash
+                } else {
+                    alert("Xatolik: " + data.message);
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Oshxonaga buyurtma yuborish`;
+                alert("Tarmoq xatosi!");
+            });
+        }
+
+        // Jonli holat va Teskari Sanoq
+        function openLiveScreen() {
+            document.getElementById('liveOrderScreen').classList.remove('hidden');
+        }
+
+        function closeLiveScreen() {
+            document.getElementById('liveOrderScreen').classList.add('hidden');
+        }
+
+        function startOrderTracking() {
+            if (!currentOrderId) return;
+            clearInterval(pollInterval);
+            pollInterval = setInterval(checkOrderStatus, 2500);
+            checkOrderStatus();
+        }
+
+        function checkOrderStatus() {
+            if (!currentOrderId) return;
+
+            fetch(`/api/order/${currentOrderId}/status/`)
+                .then(res => res.json())
+                .then(order => {
+                    const badge = document.getElementById('orderStatusBadge');
+                    const title = document.getElementById('liveStatusTitle');
+                    const desc = document.getElementById('liveStatusDesc');
+
+                    if (order.status === 'PENDING') {
+                        badge.innerText = "Oshxona kutilmoqda...";
+                        badge.className = "mt-6 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold";
+                        title.innerText = "Buyurtma yuborildi!";
+                        desc.innerText = "Oshxona buyurtmangizni qabul qilishi bilan tayyorlanish vaqti ko'rsatiladi.";
+                        document.getElementById('countdownMinutes').innerText = "⏳";
+                    } 
+                    else if (order.status === 'ACCEPTED') {
+                        badge.innerText = `Tayyorlanmoqda (${order.estimated_minutes} daqiqa)`;
+                        badge.className = "mt-6 px-4 py-1.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-bold";
+                        title.innerText = "Buyurtmangiz qabul qilindi!";
+                        desc.innerText = "Oshpazlarimiz taomingizni tayyorlamoqda:";
+
+                        if (order.ready_timestamp) {
+                            runCountdown(new Date(order.ready_timestamp));
+                        }
+                    } 
+                    else if (order.status === 'READY') {
+                        clearInterval(countdownInterval);
+                        badge.innerText = "Tayyor! Yetkazilmoqda";
+                        badge.className = "mt-6 px-4 py-1.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-xs font-bold animate-bounce";
+                        title.innerText = "Taomingiz tayyor!";
+                        desc.innerText = "Ofitsiant stolingizga yetkazib kelmoqda. Yoqimli ishtaha!";
+                        document.getElementById('countdownMinutes').innerText = "00:00";
+                    } 
+                    else if (order.status === 'DELIVERED') {
+                        clearInterval(countdownInterval);
+                        badge.innerText = "Yetkazildi (Hisob kutilmoqda)";
+                        badge.className = "mt-6 px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold";
+                        title.innerText = "Taomlar yetkazildi!";
+                        desc.innerText = "Yoqimli ishtaha! Hisob-kitob uchun kassaga yoki ofitsiantga murojaat qiling.";
+                        document.getElementById('countdownMinutes').innerText = "✓";
+                    } 
+                    else if (order.status === 'COMPLETED') {
+                        clearInterval(pollInterval);
+                        clearInterval(countdownInterval);
+                        title.innerText = "To'lov qabul qilindi!";
+                        desc.innerText = "Tashrifingiz uchun rahmat, sizga xizmat ko'rsatishdan mamnunmiz!";
+                        badge.innerText = "To'landi & Yakunlandi";
+                        badge.className = "mt-6 px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold";
+                    } 
+                    else if (order.status === 'CANCELLED') {
+                        clearInterval(pollInterval);
+                        clearInterval(countdownInterval);
+                        title.innerText = "Buyurtma bekor qilindi";
+                        desc.innerText = order.cancellation_reason ? `Sabab: ${order.cancellation_reason}` : "Iltimos, ofitsiantga murojaat qiling.";
+                        badge.innerText = order.cancelled_by ? `Bekor qilindi (${order.cancelled_by})` : "Bekor qilindi";
+                        badge.className = "mt-6 px-4 py-1.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold";
+                    }
+                });
+        }
+
+        function runCountdown(targetDate) {
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                const now = new Date();
+                const diff = targetDate - now;
+
+                if (diff <= 0) {
+                    clearInterval(countdownInterval);
+                    document.getElementById('countdownMinutes').innerText = "00:00";
+                    return;
+                }
+
+                const totalSeconds = Math.floor(diff / 1000);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+
+                const formatted = 
+                    String(minutes).padStart(2, '0') + ":" + 
+                    String(seconds).padStart(2, '0');
+
+                document.getElementById('countdownMinutes').innerText = formatted;
+            }, 1000);
+        }
+
+        // Profil funksiyalari (Ixtiyoriy ro'yxatdan o'tish)
+        function saveClientProfile() {
+            const name = document.getElementById('clientNameInput').value.trim();
+            const phone = document.getElementById('clientPhoneInput').value.trim();
+
+            if (name) localStorage.setItem('girgitdon_client_name', name);
+            if (phone) localStorage.setItem('girgitdon_client_phone', phone);
+
+            displayProfileInfo();
+
+            // Serverga ham ma'lumotlarni yuborish (bazada mehmon profilini yangilash)
+            const guestUuid = getOrCreateGuestUuid();
+            const info = detectDeviceInfo();
+            fetch(`/r/${restaurantSlug}/track/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    guest_uuid: guestUuid,
+                    table_number: currentTableNumber,
+                    device_name: info.device,
+                    os_name: info.os,
+                    browser_name: info.browser,
+                    client_name: name,
+                    client_phone: phone
+                })
+            }).catch(e => console.log("Track profile sync err:", e));
+        }
+
+        function displayProfileInfo() {
+            const name = localStorage.getItem('girgitdon_client_name');
+            const phone = localStorage.getItem('girgitdon_client_phone');
+
+            if (name || phone) {
+                document.getElementById('guestProfileView').classList.add('hidden');
+                document.getElementById('savedProfileView').classList.remove('hidden');
+                document.getElementById('displayClientName').innerText = name || "Mehmon";
+                document.getElementById('displayClientPhone').innerText = phone || "Telefon kiritilmagan";
+                const avatarChar = name ? name.trim().charAt(0).toUpperCase() : 'M';
+                const avatarEl = document.getElementById('displayClientAvatar');
+                if (avatarEl) avatarEl.innerText = avatarChar;
+            } else {
+                document.getElementById('guestProfileView').classList.remove('hidden');
+                document.getElementById('savedProfileView').classList.add('hidden');
+            }
+        }
+
+        function editClientProfile() {
+            const name = localStorage.getItem('girgitdon_client_name') || '';
+            const phone = localStorage.getItem('girgitdon_client_phone') || '';
+            document.getElementById('clientNameInput').value = name;
+            document.getElementById('clientPhoneInput').value = phone;
+
+            document.getElementById('guestProfileView').classList.remove('hidden');
+            document.getElementById('savedProfileView').classList.add('hidden');
+        }
+
+        function logoutClientProfile() {
+            localStorage.removeItem('girgitdon_client_name');
+            localStorage.removeItem('girgitdon_client_phone');
+            document.getElementById('clientNameInput').value = '';
+            document.getElementById('clientPhoneInput').value = '';
+            displayProfileInfo();
+        }
+
+        function loadRecentOrderInfo() {
+            const last = localStorage.getItem('girgitdon_last_order');
+            if (last) {
+                const data = JSON.parse(last);
+                document.getElementById('profileRecentOrder').innerHTML = `
+                    <div class="flex items-center justify-between font-bold text-slate-800">
+                        <span>#${data.id} Buyurtma (${data.table}-stol)</span>
+                        <span class="text-orange-500">${data.time}</span>
+                    </div>
+                `;
+            }
+        }
+
+        // 2. TILNI O'ZGARTIRISH (I18N MULTI-LANGUAGE)
+        function setMenuLanguage(lang) {
+            localStorage.setItem('girgitdon_menu_lang', lang);
+            applyMenuLanguage(lang);
+        }
+
+        function applyMenuLanguage(lang = 'uz') {
+            if (typeof i18nTranslations === 'undefined') return;
+            const t = i18nTranslations[lang] || i18nTranslations.uz;
+
+            // Barcha data-i18n matnlarni tarjima qilish
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.innerText = t[key];
+            });
+
+            // Placeholder larni tarjima qilish
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (t[key]) el.placeholder = t[key];
+            });
+
+            // Til tugmalarining faol holati
+            document.querySelectorAll('.menu-lang-btn').forEach(btn => {
+                if (btn.getAttribute('data-menu-lang') === lang) {
+                    btn.classList.add('bg-orange-500', 'text-white');
+                    btn.classList.remove('text-white/70');
+                } else {
+                    btn.classList.remove('bg-orange-500');
+                    btn.classList.add('text-white/70');
+                }
+            });
+        }
+
+        // Dastur yuklanganda
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('girgitdon_menu_lang') || 'uz';
+            applyMenuLanguage(savedLang);
+            displayProfileInfo();
+            loadRecentOrderInfo();
+            trackGuestSession(); // Mehmon va qurilma sessiyasini ishga tushirish
+        });
+    </script>
+    <script src="/static/i18n.js"></script>
+    <script>
+        // i18n.js yuklangandan so'ng darhol tilni qo'llash
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('girgitdon_menu_lang') || 'uz';
+            applyMenuLanguage(savedLang);
+        });
+    </script>
+</body>
+</html>

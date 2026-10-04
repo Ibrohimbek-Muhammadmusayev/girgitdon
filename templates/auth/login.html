@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Kirish — SmartMenu{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-3xl p-8 border border-slate-100 shadow-2xl shadow-slate-200/50">
+        <div class="text-center mb-8">
+            <div class="w-14 h-14 bg-gradient-to-tr from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center text-white mx-auto shadow-lg shadow-orange-500/30 mb-4">
+                <i class="fa-solid fa-utensils text-2xl"></i>
+            </div>
+            <h2 class="text-2xl font-black text-slate-900">Kabinetga kirish</h2>
+            <p class="text-slate-500 text-sm mt-1">Restoranni boshqarish tizimi</p>
+        </div>
+
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Login (Username)</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
+                    <input type="text" name="username" required placeholder="Masalan: admin yoki kafe_nomi" class="w-full pl-11 pr-4 py-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium text-sm transition">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Parol</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input type="password" name="password" required placeholder="••••••••" class="w-full pl-11 pr-4 py-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium text-sm transition">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full py-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 text-base">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i> Kirish
+            </button>
+        </form>
+
+        <div class="mt-8 text-center text-sm text-slate-500">
+            Hali restoraningiz yo'qmi? 
+            <a href="{% url 'register' %}" class="text-orange-500 font-bold hover:underline">Ro'yxatdan o'ting</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

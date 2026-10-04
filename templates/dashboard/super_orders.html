@@ -1,0 +1,60 @@
+{% extends 'dashboard/super_base.html' %}
+
+{% block title %}Global Buyurtmalar — Girgitdon Super Admin{% endblock %}
+{% block header_title %}Barcha Restoranlar Buyurtmalari{% endblock %}
+{% block header_subtitle %}Tizimdagi barcha kafelardan kelayotgan buyurtmalar oqimi{% endblock %}
+
+{% block super_content %}
+<div class="space-y-6">
+
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-300">
+                <thead class="bg-slate-950/60 text-xs uppercase font-black text-slate-400 border-b border-slate-800">
+                    <tr>
+                        <th class="px-4 py-3.5 rounded-l-xl"># ID</th>
+                        <th class="px-4 py-3.5">Restoran</th>
+                        <th class="px-4 py-3.5">Stol</th>
+                        <th class="px-4 py-3.5">Taomlar</th>
+                        <th class="px-4 py-3.5">Summa</th>
+                        <th class="px-4 py-3.5">Holati</th>
+                        <th class="px-4 py-3.5 rounded-r-xl">Vaqt</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for o in orders %}
+                    <tr class="hover:bg-slate-800/40 transition text-xs">
+                        <td class="px-4 py-3.5 font-bold text-white">#{{ o.id }}</td>
+                        <td class="px-4 py-3.5 font-black text-orange-400">{{ o.restaurant.name }}</td>
+                        <td class="px-4 py-3.5 font-bold text-slate-200">{{ o.table_number }}-stol</td>
+                        <td class="px-4 py-3.5">
+                            {% for item in o.items.all %}
+                                <span class="inline-block bg-slate-950 text-slate-300 border border-slate-800 px-2 py-0.5 rounded font-medium mr-1">{{ item.item_name }} (x{{ item.quantity }})</span>
+                            {% endfor %}
+                        </td>
+                        <td class="px-4 py-3.5 font-black text-white">{{ o.total_price|floatformat:0 }} so'm</td>
+                        <td class="px-4 py-3.5">
+                            {% if o.status == 'PENDING' %}
+                                <span class="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 font-bold">Kutilmoqda</span>
+                            {% elif o.status == 'ACCEPTED' %}
+                                <span class="px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-400 font-bold">Tayyorlanmoqda ({{ o.estimated_minutes }} daq)</span>
+                            {% elif o.status == 'READY' %}
+                                <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">Tayyor</span>
+                            {% else %}
+                                <span class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-bold">{{ o.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3.5 text-slate-500">{{ o.created_at|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-10 text-slate-500">Buyurtmalar mavjud emas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

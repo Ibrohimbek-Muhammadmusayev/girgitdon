@@ -1,0 +1,65 @@
+{% extends 'dashboard/super_base.html' %}
+
+{% block title %}Landing Page Boshqaruvi — Girgitdon Super Admin{% endblock %}
+{% block header_title %}Landing Page Sozlamalari & Matnlari{% endblock %}
+{% block header_subtitle %}Bosh sahifadagi matnlar, shiorlar, kontaktlar va e'lonlarni boshqarish{% endblock %}
+
+{% block super_content %}
+<div class="max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">
+    <div class="mb-8 pb-6 border-b border-slate-800 flex items-center justify-between">
+        <div>
+            <h2 class="text-xl font-black text-white">Bosh Sahifa (Landing Page) Tahrirchisi</h2>
+            <p class="text-xs text-slate-400 mt-1">Ushbu o'zgarishlar darhol bosh sahifada aks etadi</p>
+        </div>
+        <a href="/" target="_blank" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-orange-400 text-xs font-bold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-eye"></i> Saytda ko'rish
+        </a>
+    </div>
+
+    <form method="POST" class="space-y-6">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Platforma Nomi</label>
+                <input type="text" name="title" value="{{ settings_obj.title }}" required class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-semibold text-sm outline-none focus:border-orange-500">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Qisqa Shior (Tagline)</label>
+                <input type="text" name="tagline" value="{{ settings_obj.tagline }}" required class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-semibold text-sm outline-none focus:border-orange-500">
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Bosh Sahifa Katta Sarlavhasi (Hero Title)</label>
+            <input type="text" name="hero_title" value="{{ settings_obj.hero_title }}" required class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold text-sm outline-none focus:border-orange-500">
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Bosh Sahifa Tavsif Matni (Hero Description)</label>
+            <textarea name="hero_description" rows="4" required class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-medium text-sm outline-none focus:border-orange-500">{{ settings_obj.hero_description }}</textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 p-5 bg-slate-950/60 rounded-2xl border border-slate-800">
+            <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase mb-2"><i class="fa-solid fa-phone text-emerald-400 mr-1"></i> Aloqa Telefoni</label>
+                <input type="text" name="contact_phone" value="{{ settings_obj.contact_phone|default:'' }}" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white font-semibold text-sm outline-none focus:border-orange-500">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase mb-2"><i class="fa-brands fa-telegram text-sky-400 mr-1"></i> Telegram Admin Username</label>
+                <input type="text" name="contact_telegram" value="{{ settings_obj.contact_telegram|default:'' }}" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white font-semibold text-sm outline-none focus:border-orange-500">
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase mb-2"><i class="fa-solid fa-bullhorn text-amber-400 mr-1"></i> E'lon / Yangilik Banneri (ixtiyoriy)</label>
+            <textarea name="announcement" rows="2" placeholder="Masalan: Yangi restoranlar uchun birinchi 1 oy bepul!" class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-medium text-sm outline-none focus:border-orange-500">{{ settings_obj.announcement|default:'' }}</textarea>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800 flex justify-end">
+            <button type="submit" class="px-8 py-3.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black text-sm shadow-xl shadow-orange-500/30 transition flex items-center gap-2">
+                <i class="fa-solid fa-floppy-disk"></i> O'zgarishlarni Saqlash
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

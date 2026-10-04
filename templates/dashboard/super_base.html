@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Super Admin — Girgitdon{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex antialiased">
+
+    <!-- Flash xabarlar -->
+    {% if messages %}
+    <div class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-md">
+        {% for message in messages %}
+        <div class="p-4 rounded-2xl shadow-2xl border text-sm font-semibold flex items-center gap-3 bg-slate-900 text-white border-slate-700">
+            <i class="fa-solid fa-circle-check text-orange-500 text-lg"></i>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ==========================================
+         SUPER ADMIN SIDEBAR (YON PANEL)
+         ========================================== -->
+    <aside class="w-72 bg-slate-900 border-r border-slate-800 flex flex-col justify-between flex-shrink-0 h-screen sticky top-0">
+        <div>
+            <!-- Brend va Sarlavha -->
+            <div class="h-20 flex items-center gap-3 px-6 border-b border-slate-800">
+                <img src="/static/logo.png" alt="Girgitdon" class="w-11 h-11 rounded-full object-cover border-2 border-orange-500 shadow-md">
+                <div>
+                    <h2 class="text-white font-black text-base tracking-tight leading-none">Girgitdon</h2>
+                    <span class="text-[10px] font-black uppercase tracking-wider text-orange-400">Super Boshqaruv</span>
+                </div>
+            </div>
+
+            <!-- Bo'limlar Navigatsiyasi -->
+            <nav class="p-4 space-y-1.5">
+                <div class="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Asosiy Bo'limlar</div>
+                
+                <!-- Umumiy Tahlil -->
+                <a href="{% url 'super_dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition {% if active_tab == 'overview' %}bg-orange-500 text-white shadow-lg shadow-orange-500/25{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i class="fa-solid fa-chart-pie w-5 text-center text-sm"></i>
+                    <span>Umumiy Ko'rsatkichlar</span>
+                </a>
+
+                <!-- Restoranlar -->
+                <a href="{% url 'super_restaurants' %}" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition {% if active_tab == 'restaurants' %}bg-orange-500 text-white shadow-lg shadow-orange-500/25{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i class="fa-solid fa-store w-5 text-center text-sm"></i>
+                    <span>Restoranlar Boshqaruvi</span>
+                </a>
+
+                <!-- Barcha Buyurtmalar -->
+                <a href="{% url 'super_orders' %}" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition {% if active_tab == 'orders' %}bg-orange-500 text-white shadow-lg shadow-orange-500/25{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i class="fa-solid fa-receipt w-5 text-center text-sm"></i>
+                    <span>Global Buyurtmalar</span>
+                </a>
+
+                <div class="px-3 pt-4 pb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Tizim & Server</div>
+
+                <!-- Landing Page Boshqaruvi -->
+                <a href="{% url 'super_landing_settings' %}" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition {% if active_tab == 'landing' %}bg-orange-500 text-white shadow-lg shadow-orange-500/25{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i class="fa-solid fa-window-maximize w-5 text-center text-sm"></i>
+                    <span>Landing Page Matnlari</span>
+                </a>
+
+                <!-- Server Fayllari va Xotira -->
+                <a href="{% url 'super_storage' %}" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition {% if active_tab == 'storage' %}bg-orange-500 text-white shadow-lg shadow-orange-500/25{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i class="fa-solid fa-hard-drive w-5 text-center text-sm"></i>
+                    <span>Rasmlar & Server Xotirasi</span>
+                </a>
+
+                <!-- Django Asl Baza -->
+                <a href="/django-admin/" target="_blank" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                    <i class="fa-solid fa-database w-5 text-center text-sm text-amber-400"></i>
+                    <span>Django Admin Baza</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Pastki Foydalanuvchi & Chiqish -->
+        <div class="p-4 border-t border-slate-800 space-y-3">
+            <a href="/" target="_blank" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-orange-400 text-xs font-bold flex items-center justify-center gap-2 transition">
+                <i class="fa-solid fa-globe"></i> Saytni ko'rish
+            </a>
+            <div class="flex items-center justify-between px-2 pt-1">
+                <div>
+                    <p class="text-xs font-black text-white">{{ request.user.username }}</p>
+                    <span class="text-[10px] text-emerald-400 font-semibold">Tizim Egasi</span>
+                </div>
+                <a href="{% url 'logout' %}" class="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition" title="Chiqish">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ==========================================
+         ASOSIY KONTENT MAYDONI
+         ========================================== -->
+    <div class="flex-1 flex flex-col h-screen overflow-y-auto">
+        <!-- Topbar -->
+        <header class="h-20 bg-slate-900/60 backdrop-blur-md border-b border-slate-800 px-8 flex items-center justify-between sticky top-0 z-30">
+            <div>
+                <h1 class="text-lg font-black text-white">{% block header_title %}Boshqaruv Paneli{% endblock %}</h1>
+                <p class="text-xs text-slate-400">{% block header_subtitle %}Platforma faoliyati va ma'lumotlar boshqaruvi{% endblock %}</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{% url 'register' %}" target="_blank" class="px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-lg shadow-orange-500/20 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-plus"></i> Yangi Restoran Qo'shish
+                </a>
+            </div>
+        </header>
+
+        <!-- Asosiy Sahifa Kontenti -->
+        <main class="p-8 max-w-7xl w-full mx-auto space-y-8">
+            {% block super_content %}{% endblock %}
+        </main>
+    </div>
+
+</body>
+</html>

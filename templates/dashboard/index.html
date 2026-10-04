@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+
+{% block title %}Boshqaruv Paneli — {{ restaurant.name }}{% endblock %}
+
+{% block content %}
+<div class="flex h-screen overflow-hidden bg-slate-50">
+
+    <!-- Sidebar (Desktop & Mobile) -->
+    <aside id="sidebar" class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between flex-shrink-0 transition-all duration-300 fixed inset-y-0 left-0 z-50 md:static md:translate-x-0 -translate-x-full">
+        <div>
+            <!-- Restoran Logosi & Nomi -->
+            <div class="h-20 flex items-center gap-3 px-6 border-b border-slate-800">
+                <img src="/static/logo.png" alt="Girgitdon" class="w-10 h-10 rounded-full object-cover border border-orange-500 shadow-md">
+                <div class="overflow-hidden">
+                    <h2 class="text-white font-bold text-sm truncate">{{ restaurant.name }}</h2>
+                    <span class="text-xs text-orange-400 font-bold">Girgitdon Boshqaruv</span>
+                </div>
+            </div>
+
+            <!-- Menyu havolalari -->
+            <nav class="p-4 space-y-1">
+                <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition {% if request.resolver_match.url_name == 'dashboard' %}bg-orange-500 text-white shadow-lg shadow-orange-500/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                    <i class="fa-solid fa-gauge-high w-5 text-center"></i> <span data-d-i18n="nav_dashboard">Asosiy Dashbord</span>
+                </a>
+                <a href="{% url 'menu_items' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition {% if request.resolver_match.url_name == 'menu_items' %}bg-orange-500 text-white shadow-lg shadow-orange-500/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                    <i class="fa-solid fa-burger w-5 text-center"></i> <span data-d-i18n="nav_menu">Taomlar & Menyu</span>
+                </a>
+                <a href="{% url 'tables' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition {% if request.resolver_match.url_name == 'tables' %}bg-orange-500 text-white shadow-lg shadow-orange-500/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                    <i class="fa-solid fa-qrcode w-5 text-center"></i> <span data-d-i18n="nav_tables">Stollar & QR Kodlar</span>
+                </a>
+                <a href="{% url 'cashier' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition {% if request.resolver_match.url_name == 'cashier' %}bg-orange-500 text-white shadow-lg shadow-orange-500/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                    <i class="fa-solid fa-cash-register w-5 text-center text-emerald-400"></i> <span data-d-i18n="nav_cashier">Kassa & To'lovlar</span>
+                    <span id="sidebarCashierBadge" class="ml-auto bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-black animate-pulse {% if nav_cashier_count == 0 or not nav_cashier_count %}hidden{% endif %}">{{ nav_cashier_count|default:"0" }}</span>
+                </a>
+                <a href="{% url 'kitchen' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition {% if request.resolver_match.url_name == 'kitchen' %}bg-orange-500 text-white shadow-lg shadow-orange-500/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                    <i class="fa-solid fa-fire-burner w-5 text-center"></i> <span data-d-i18n="nav_kitchen">Oshxona (KDS)</span>
+                    <span id="sidebarKitchenBadge" class="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-black animate-pulse {% if nav_pending_count == 0 or not nav_pending_count %}hidden{% endif %}">{{ nav_pending_count|default:"0" }}</span>
+                </a>
+                <a href="{% url 'order_history' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition {% if request.resolver_match.url_name == 'order_history' %}bg-orange-500 text-white shadow-lg shadow-orange-500/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                    <i class="fa-solid fa-clock-rotate-left w-5 text-center"></i> <span data-d-i18n="nav_history">Buyurtmalar Tarixi</span>
+                </a>
+                <a href="{% url 'visitors_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition {% if request.resolver_match.url_name == 'visitors_list' %}bg-orange-500 text-white shadow-lg shadow-orange-500/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                    <i class="fa-solid fa-users-viewfinder w-5 text-center"></i> <span data-d-i18n="nav_visitors">Mehmonlar & Qurilmalar</span>
+                </a>
+                <a href="{% url 'settings' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition {% if request.resolver_match.url_name == 'settings' %}bg-orange-500 text-white shadow-lg shadow-orange-500/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                    <i class="fa-solid fa-gear w-5 text-center"></i> <span data-d-i18n="nav_settings">Sozlamalar</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Foydalanuvchi va Chiqish -->
+        <div class="p-4 border-t border-slate-800">
+            <a href="{% url 'public_menu' restaurant.slug %}" target="_blank" class="w-full mb-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-800 text-orange-400 text-xs font-bold hover:bg-slate-700 transition">
+                <i class="fa-solid fa-mobile-screen"></i> <span data-d-i18n="check_menu">Menyuni tekshirish</span>
+            </a>
+            <div class="flex items-center justify-between px-2 pt-2">
+                <div class="text-xs">
+                    <p class="font-bold text-white">{{ user.username }}</p>
+                    <p class="text-slate-500" data-d-i18n="admin_role">Restoran Administratori</p>
+                </div>
+                <a href="{% url 'logout' %}" class="text-slate-400 hover:text-red-400 transition text-sm p-2" title="Chiqish">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Overlay for mobile -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
+
+    <!-- Asosiy Kontent Maydoni -->
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto">
+        <!-- Top Navbar -->
+        <header class="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-6 sticky top-0 z-30">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-700 text-xl p-2 rounded-lg hover:bg-slate-100">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <h1 class="text-xl font-black text-slate-900">{% block header_title %}Umumiy Statistika & Boshqaruv{% endblock %}</h1>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- Dashboard Til Tanlagich (UZ, ЎЗБ, RU, EN) -->
+                <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+                    <button onclick="setDashboardLanguage('uz')" data-lang="uz" class="dash-lang-btn px-2.5 py-1 rounded-lg transition bg-orange-500 text-white shadow-sm">UZ</button>
+                    <button onclick="setDashboardLanguage('oz')" data-lang="oz" class="dash-lang-btn px-2.5 py-1 rounded-lg transition text-slate-600 hover:bg-slate-200">ЎЗ</button>
+                    <button onclick="setDashboardLanguage('ru')" data-lang="ru" class="dash-lang-btn px-2.5 py-1 rounded-lg transition text-slate-600 hover:bg-slate-200">RU</button>
+                    <button onclick="setDashboardLanguage('en')" data-lang="en" class="dash-lang-btn px-2.5 py-1 rounded-lg transition text-slate-600 hover:bg-slate-200">EN</button>
+                </div>
+
+                <a href="{% url 'kitchen' %}" class="relative px-4 py-2 rounded-xl bg-orange-50 border border-orange-200 text-orange-600 font-bold text-xs flex items-center gap-2 hover:bg-orange-100 transition">
+                    <i class="fa-solid fa-fire text-orange-500"></i> <span data-d-i18n="kitchen_screen">Oshxona ekrani</span>
+                    {% if pending_count > 0 %}
+                    <span class="w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></span>
+                    {% endif %}
+                </a>
+            </div>
+        </header>
+
+        <!-- Asosiy ma'lumotlar -->
+        <div class="p-6 max-w-7xl w-full mx-auto space-y-6">
+            {% block dashboard_content %}
+            <!-- 4 ta Asosiy Kartochkalar (Kpi) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Bugungi Tushum -->
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Bugungi daromad</p>
+                        <h3 class="text-2xl font-black text-slate-900 mt-0.5">{{ today_sales|floatformat:0 }} <span class="text-xs font-normal text-slate-500">so'm</span></h3>
+                    </div>
+                </div>
+
+                <!-- Bugungi Buyurtmalar -->
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-bell-concierge"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Bugungi buyurtmalar</p>
+                        <h3 class="text-2xl font-black text-slate-900 mt-0.5">{{ today_orders_count }} <span class="text-xs font-normal text-slate-500">ta</span></h3>
+                    </div>
+                </div>
+
+                <!-- Kutilayotgan (Oshxonada) -->
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Jarayonda</p>
+                        <h3 class="text-2xl font-black text-slate-900 mt-0.5">{{ pending_count|add:preparing_count }} <span class="text-xs font-normal text-slate-500">ta</span></h3>
+                    </div>
+                </div>
+
+                <!-- Jami Taomlar -->
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-utensils"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Menyudagi taomlar</p>
+                        <h3 class="text-2xl font-black text-slate-900 mt-0.5">{{ menu_count }} <span class="text-xs font-normal text-slate-500">ta</span></h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- So'nggi Buyurtmalar Jadvali -->
+            <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-lg font-black text-slate-900">So'nggi buyurtmalar</h2>
+                        <p class="text-xs text-slate-500">Stollardan tushgan yangi buyurtmalar holati</p>
+                    </div>
+                    <a href="{% url 'kitchen' %}" class="text-xs font-bold text-orange-500 hover:underline">Oshxona rejimiga o'tish →</a>
+                </div>
+
+                {% if recent_orders %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-400">
+                            <tr>
+                                <th class="px-4 py-3 rounded-l-xl"># ID</th>
+                                <th class="px-4 py-3">Stol</th>
+                                <th class="px-4 py-3">Taomlar</th>
+                                <th class="px-4 py-3">Summa</th>
+                                <th class="px-4 py-3">Holat</th>
+                                <th class="px-4 py-3 rounded-r-xl">Vaqt</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for order in recent_orders %}
+                            <tr class="hover:bg-slate-50/50 transition">
+                                <td class="px-4 py-3.5 font-bold text-slate-900">#{{ order.id }}</td>
+                                <td class="px-4 py-3.5 font-bold text-orange-600">Stol {{ order.table_number }}</td>
+                                <td class="px-4 py-3.5">
+                                    <div class="text-xs space-y-0.5">
+                                        {% for item in order.items.all %}
+                                        <span class="inline-block bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium mr-1">{{ item.item_name }} (x{{ item.quantity }})</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3.5 font-bold text-slate-900">{{ order.total_price|floatformat:0 }} so'm</td>
+                                <td class="px-4 py-3.5">
+                                    {% if order.status == 'PENDING' %}
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">Kutilmoqda</span>
+                                    {% elif order.status == 'ACCEPTED' %}
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">Tayyorlanmoqda ({{ order.estimated_minutes }} daq)</span>
+                                    {% elif order.status == 'READY' %}
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">Tayyor!</span>
+                                    {% elif order.status == 'COMPLETED' %}
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">Tugallandi</span>
+                                    {% else %}
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">Bekor qilingan</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3.5 text-xs text-slate-400">{{ order.created_at|date:"H:i" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-12 text-slate-400">
+                    <i class="fa-solid fa-inbox text-4xl mb-3 text-slate-300"></i>
+                    <p class="font-medium text-sm">Hozircha buyurtmalar yo'q.</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endblock %}
+        </div>
+    </main>
+</div>
+
+<script src="/static/dashboard_i18n.js"></script>
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+    }
+
+    // Real-time Sidebar Badges (Kassa va Oshxona hisoblagichlarini doimiy yangilab turish)
+    function updateSidebarBadges() {
+        fetch("{% url 'api_sidebar_badge_counts' %}")
+            .then(res => res.json())
+            .then(data => {
+                const kBadge = document.getElementById('sidebarKitchenBadge');
+                const cBadge = document.getElementById('sidebarCashierBadge');
+
+                if (kBadge) {
+                    if (data.kitchen_count > 0) {
+                        kBadge.innerText = data.kitchen_count;
+                        kBadge.classList.remove('hidden');
+                    } else {
+                        kBadge.classList.add('hidden');
+                    }
+                }
+
+                if (cBadge) {
+                    if (data.cashier_count > 0) {
+                        cBadge.innerText = data.cashier_count;
+                        cBadge.classList.remove('hidden');
+                    } else {
+                        cBadge.classList.add('hidden');
+                    }
+                }
+            })
+            .catch(e => console.log("Sidebar badge update err:", e));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateSidebarBadges();
+        setInterval(updateSidebarBadges, 3000);
+    });
+</script>
+{% endblock %}

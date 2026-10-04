@@ -1,0 +1,95 @@
+{% extends 'dashboard/index.html' %}
+
+{% block title %}Restoran Sozlamalari — {{ restaurant.name }}{% endblock %}
+{% block header_title %}Restoran Profil & Sozlamalar{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-3xl bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+    <div class="mb-6">
+        <h2 class="text-xl font-black text-slate-900">Restoran Ma'lumotlari</h2>
+        <p class="text-xs text-slate-500">Mijozlar menyusida va cheklarda ko'rinadigan ma'lumotlar</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Restoran Nomi</label>
+                <input type="text" name="name" value="{{ restaurant.name }}" required class="w-full p-3.5 rounded-xl border border-slate-200 text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Telefon raqam</label>
+                <input type="text" name="phone" value="{{ restaurant.phone|default:'' }}" class="w-full p-3.5 rounded-xl border border-slate-200 text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Restoran Haqida Qisqacha</label>
+            <textarea name="description" rows="3" class="w-full p-3.5 rounded-xl border border-slate-200 text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500">{{ restaurant.description|default:'' }}</textarea>
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Manzil</label>
+            <input type="text" name="address" value="{{ restaurant.address|default:'' }}" class="w-full p-3.5 rounded-xl border border-slate-200 text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-2"><i class="fa-solid fa-wifi text-orange-500 mr-1"></i> Wi-Fi Nomi (SSID)</label>
+                <input type="text" name="wifi_name" value="{{ restaurant.wifi_name|default:'' }}" placeholder="Kafe_Mehmon" class="w-full p-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Wi-Fi Paroli</label>
+                <input type="text" name="wifi_pass" value="{{ restaurant.wifi_pass|default:'' }}" placeholder="12345678" class="w-full p-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-2"><i class="fa-brands fa-instagram text-rose-500 mr-1"></i> Instagram Manzili</label>
+                <input type="text" name="instagram" value="{{ restaurant.instagram|default:'' }}" placeholder="masalan: safari_lounge yoki https://instagram.com/..." class="w-full p-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-2"><i class="fa-brands fa-telegram text-sky-500 mr-1"></i> Telegram Manzili / Kanal</label>
+                <input type="text" name="telegram" value="{{ restaurant.telegram|default:'' }}" placeholder="masalan: safari_kafe yoki https://t.me/..." class="w-full p-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-2">1. Logotip</label>
+                {% if restaurant.logo %}
+                <div class="mb-2 w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                    <img src="{{ restaurant.logo.url }}" class="w-full h-full object-cover">
+                </div>
+                {% endif %}
+                <input type="file" name="logo" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-2">2. Menyu Banneri (Tepadagi)</label>
+                {% if restaurant.cover_image %}
+                <div class="mb-2 w-28 h-16 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                    <img src="{{ restaurant.cover_image.url }}" class="w-full h-full object-cover">
+                </div>
+                {% endif %}
+                <input type="file" name="cover_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-2">3. Restoran Haqida Banneri (Tashqi rasm)</label>
+                {% if restaurant.about_cover %}
+                <div class="mb-2 w-28 h-16 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                    <img src="{{ restaurant.about_cover.url }}" class="w-full h-full object-cover">
+                </div>
+                {% endif %}
+                <input type="file" name="about_cover" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700">
+            </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 flex justify-end">
+            <button type="submit" class="px-6 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-500/20 transition">
+                O'zgarishlarni saqlash
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

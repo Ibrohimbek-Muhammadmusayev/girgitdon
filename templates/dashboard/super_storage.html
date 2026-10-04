@@ -1,0 +1,157 @@
+{% extends 'dashboard/super_base.html' %}
+
+{% block title %}Server Rasmlari & Xotira — Girgitdon Super Admin{% endblock %}
+{% block header_title %}Server Rasmlari & Fayllar Xotirasi{% endblock %}
+{% block header_subtitle %}Yuklangan barcha rasmlar, ularning holati (ishlatilmoqda / ortiqcha) va o'chirish boshqaruvi{% endblock %}
+
+{% block super_content %}
+<div class="space-y-8">
+
+    <!-- Xotira Sarfi Ko'rsatkich Paneli -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+                <span class="text-xs font-black uppercase tracking-wider text-slate-400">Media Fayllar Disk Sarfi</span>
+                <h3 class="text-3xl font-black text-white mt-1">{{ total_mb }} MB <span class="text-xs font-semibold text-slate-400">/ {{ storage_limit_mb }} MB limit</span></h3>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="px-4 py-2 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-300 flex items-center gap-2">
+                    <i class="fa-solid fa-file-image text-orange-400"></i>
+                    <span>Jami: <strong class="text-white">{{ file_count }} ta</strong></span>
+                </div>
+
+                {% if unused_count > 0 %}
+                <div class="px-4 py-2 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs font-bold text-rose-400 flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Ishlatilmayotgan: <strong>{{ unused_count }} ta</strong> ({{ unused_kb }} KB)</span>
+                </div>
+
+                <!-- Barcha ortiqcha rasmlarni bittada tozalash tugmasi -->
+                <form method="POST" onsubmit="return confirm('Rostdan ham barcha ortiqcha, hech qayerda ishlatilmayotgan rasmlarni o\'chirib tashlamoqchimisiz?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="clean_all_unused">
+                    <button type="submit" class="px-5 py-2.5 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-black text-xs shadow-lg shadow-rose-500/25 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-broom"></i> Barcha ortiqchalarni tozalash
+                    </button>
+                </form>
+                {% else %}
+                <div class="px-4 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-400 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>Barcha rasmlar faol (ortiqcha rasm yo'q)</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800">
+            <div class="h-full bg-gradient-to-r from-emerald-500 via-amber-500 to-orange-500 rounded-full transition-all duration-500" style="width: {{ storage_percentage|default:1 }}%;"></div>
+        </div>
+        <div class="flex justify-between text-[11px] font-bold text-slate-500 mt-2">
+            <span>0 MB</span>
+            <span class="text-orange-400 font-black">{{ storage_percentage }}% band</span>
+            <span>{{ storage_limit_mb }} MB (1 GB)</span>
+        </div>
+    </div>
+
+    <!-- Rasmlar Jadvali va O'chirish Boshqaruvi -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+                <h3 class="text-lg font-black text-white">Serverdagi barcha rasmlar</h3>
+                <p class="text-xs text-slate-400">Keraksiz yoki o'chirilgan taomlar/restoranlardan qolib ketgan rasmlarni o'chirish</p>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Ishlatilmoqda
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-500/10 text-rose-400 font-bold border border-rose-500/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Ishlatilmayapti (Ortiqcha)
+                </span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-300">
+                <thead class="bg-slate-950/60 text-xs uppercase font-black text-slate-400 border-b border-slate-800">
+                    <tr>
+                        <th class="px-4 py-3.5 rounded-l-xl">Rasm</th>
+                        <th class="px-4 py-3.5">Fayl Nomi</th>
+                        <th class="px-4 py-3.5">Bo'lim</th>
+                        <th class="px-4 py-3.5">Hajmi</th>
+                        <th class="px-4 py-3.5">Holati</th>
+                        <th class="px-4 py-3.5 rounded-r-xl text-right">Amallar</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for f in files %}
+                    <tr class="hover:bg-slate-800/40 transition text-xs {% if not f.is_used %}bg-rose-950/10{% endif %}">
+                        <!-- Preview -->
+                        <td class="px-4 py-3">
+                            <div class="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden flex items-center justify-center p-1">
+                                <img src="{{ f.path }}" alt="{{ f.name }}" class="w-full h-full object-contain rounded-lg">
+                            </div>
+                        </td>
+
+                        <!-- Fayl nomi -->
+                        <td class="px-4 py-3 font-mono text-xs font-bold text-white max-w-xs truncate">
+                            {{ f.name }}
+                        </td>
+
+                        <!-- Papka -->
+                        <td class="px-4 py-3">
+                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase {% if f.folder == 'logos' %}bg-blue-500/20 text-blue-400{% elif f.folder == 'qrcodes' %}bg-purple-500/20 text-purple-400{% else %}bg-amber-500/20 text-amber-400{% endif %}">
+                                {{ f.folder }}
+                            </span>
+                        </td>
+
+                        <!-- Hajmi -->
+                        <td class="px-4 py-3 font-bold text-slate-200">
+                            {{ f.size_kb }} KB
+                        </td>
+
+                        <!-- Ishlatilish holati -->
+                        <td class="px-4 py-3">
+                            {% if f.is_used %}
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                    <i class="fa-solid fa-check mr-0.5"></i> Faol
+                                </span>
+                            {% else %}
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse">
+                                    <i class="fa-solid fa-trash-can mr-0.5"></i> Ishlatilmayapti
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- O'chirish va Ko'rish amallari -->
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <a href="{{ f.path }}" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-orange-400 text-xs font-bold transition inline-flex items-center gap-1" title="Kattalashtirib ko'rish">
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                </a>
+
+                                <!-- Bitta faylni o'chirish -->
+                                <form method="POST" onsubmit="return confirm('Rostdan ham ushbu {{ f.name }} rasmini serverdan butunlay o\'chirmoqchimisiz?');" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete_file">
+                                    <input type="hidden" name="file_path" value="{{ f.rel_path }}">
+                                    <button type="submit" class="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-400 transition" title="Faylni serverdan o'chirish">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-slate-500">Hozircha serverga rasmlar yuklanmagan.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
